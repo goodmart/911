@@ -285,6 +285,32 @@
             background: #9d174d;
         }
 
+        .page-footer-credit {
+            margin-top: 22px;
+            padding: 12px 14px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 13px;
+            color: #475569;
+            line-height: 1.6;
+        }
+
+        .page-footer-credit a {
+            color: var(--primary);
+            font-weight: 700;
+            text-decoration: underline;
+            padding: 1px 4px;
+            border-radius: 4px;
+            background: #ecfdf5;
+        }
+
+        .page-footer-credit a:hover {
+            background: #d1fae5;
+            color: var(--primary-hover);
+        }
+
         .hidden {
             display: none;
         }
@@ -365,7 +391,7 @@
     </div>
 
     <form id="reunionForm" novalidate>
-        <!-- STEP 1 -->
+        <!-- STEP 1 (REGISTRATION PAGE) -->
         <div id="step1">
             <div class="form-group">
                 <label for="school">প্রতিষ্ঠান / স্কুলের নাম *</label>
@@ -416,9 +442,14 @@
 
             <p class="error-msg" id="step1Error"></p>
             <button type="button" class="btn-primary" onclick="goToStep2()">পরবর্তী ধাপ (Next) →</button>
+
+            <!-- Highlighted Footer on Registration Page (Step 1) -->
+            <div class="page-footer-credit" data-credit-footer>
+                @Developed and Designed by Your Friend <a href="https://facebook.com" target="_blank" rel="noopener noreferrer">Al Helal</a>
+            </div>
         </div>
 
-        <!-- STEP 2 -->
+        <!-- STEP 2 (PAYMENT PAGE) -->
         <div id="step2" class="hidden">
             <div class="payment-summary">
                 <h3>রেজিস্ট্রেশন ফি হিসাব</h3>
@@ -454,6 +485,11 @@
                 <button type="button" class="btn-secondary" onclick="goToStep1()">← পূর্ববর্তী ধাপ</button>
                 <button type="submit" id="submitBtn" class="btn-primary" style="margin-top: 0;">রেজিস্ট্রেশন সম্পন্ন করুন</button>
             </div>
+
+            <!-- Highlighted Footer on Payment Page (Step 2) -->
+            <div class="page-footer-credit" data-credit-footer>
+                @Developed and Designed by Your Friend <a href="https://facebook.com" target="_blank" rel="noopener noreferrer">Al Helal</a>
+            </div>
         </div>
     </form>
 
@@ -478,9 +514,23 @@
     const REGISTRATIONS_KEY = 'reunion_2027_registrations_list';
     const BD_MOBILE_REGEX = /^01[3-9]\d{8}$/;
 
+    const DEFAULT_FIREBASE_CONFIG = {
+        apiKey: "AIzaSyBemP7RKjLfq2Xvk6udcS6O1s6-1AdRleE",
+        authDomain: "reunion-registration-911.firebaseapp.com",
+        projectId: "reunion-registration-911",
+        storageBucket: "reunion-registration-911.firebasestorage.app",
+        messagingSenderId: "622863743452",
+        appId: "1:622863743452:web:b2618a59898ba4e224b719"
+    };
+
     const DEFAULT_SETTINGS = {
         bkashNumber: "01700000000",
         paymentNote: "নিচের পার্সোনাল নম্বরে উল্লিখিত টাকা Send Money করে ট্রানজেকশন আইডি (TrxID) সংগ্রহ করুন:",
+        footerCredit: {
+            text: "@Developed and Designed by Your Friend Al Helal",
+            linkText: "Al Helal",
+            linkUrl: "https://facebook.com"
+        },
         fees: {
             applicant: 1000,
             spouse: 800,
@@ -506,6 +556,16 @@
     let calculatedTotalAmount = 0;
     let dbInstance = null;
 
+    function getActiveFirebaseConfig() {
+        try {
+            const saved = JSON.parse(localStorage.getItem(FB_CONFIG_KEY) || 'null');
+            if (saved && saved.apiKey && saved.projectId && saved.appId) {
+                return saved;
+            }
+        } catch {}
+        return { ...DEFAULT_FIREBASE_CONFIG };
+    }
+
     function getSafeConfig() {
         try {
             const saved = localStorage.getItem(SETTINGS_KEY);
@@ -514,6 +574,10 @@
             return {
                 ...JSON.parse(JSON.stringify(DEFAULT_SETTINGS)),
                 ...parsed,
+                footerCredit: {
+                    ...DEFAULT_SETTINGS.footerCredit,
+                    ...(parsed.footerCredit || {})
+                },
                 fees: {
                     ...DEFAULT_SETTINGS.fees,
                     ...(parsed.fees || {})
@@ -523,6 +587,46 @@
             console.error("Failed to parse admin settings:", e);
             return JSON.parse(JSON.stringify(DEFAULT_SETTINGS));
         }
+    }
+
+    function renderFooterCredit(creditObj) {
+        const text = (creditObj?.text ?? "").trim() || DEFAULT_SETTINGS.footerCredit.text;
+        const linkText = (creditObj?.linkText ?? "").trim() || DEFAULT_SETTINGS.footerCredit.linkText;
+        const linkUrl = (creditObj?.linkUrl ?? "").trim();
+        const isSafeUrl = /^https?:\/\/.+/i.test(linkUrl);
+
+        document.querySelectorAll('[data-credit-footer]').forEach((container) => {
+            container.innerHTML = '';
+            container.style.display = '';
+
+            if (linkText && isSafeUrl && text.includes(linkText)) {
+                const idx = text.indexOf(linkText);
+                const before = text.slice(0, idx);
+                const after = text.slice(idx + linkText.length);
+
+                if (before) container.appendChild(document.createTextNode(before));
+
+                const a = document.createElement('a');
+                a.href = linkUrl;
+                a.target = '_blank';
+                a.rel = 'noopener noreferrer';
+                a.textContent = linkText;
+                container.appendChild(a);
+
+                if (after) container.appendChild(document.createTextNode(after));
+            } else {
+                container.appendChild(document.createTextNode(text));
+                if (linkText && isSafeUrl) {
+                    container.appendChild(document.createTextNode(' '));
+                    const a = document.createElement('a');
+                    a.href = linkUrl;
+                    a.target = '_blank';
+                    a.rel = 'noopener noreferrer';
+                    a.textContent = linkText;
+                    container.appendChild(a);
+                }
+            }
+        });
     }
 
     function getSafeRegistrations() {
@@ -582,6 +686,10 @@
         activeConfig = {
             ...JSON.parse(JSON.stringify(DEFAULT_SETTINGS)),
             ...(cfgObj || {}),
+            footerCredit: {
+                ...DEFAULT_SETTINGS.footerCredit,
+                ...((cfgObj && cfgObj.footerCredit) || {})
+            },
             fees: {
                 ...DEFAULT_SETTINGS.fees,
                 ...((cfgObj && cfgObj.fees) || {})
@@ -601,15 +709,17 @@
         document.getElementById('childFeeHint').textContent = maxFreeAge > 0
             ? `* ${maxFreeAge} বছর বা তার কম বয়সী সন্তানের জন্য ফ্রি; ${maxFreeAge} বছরের বেশি হলে প্রতিজন ${childFee} টাকা`
             : `* প্রতিজন সন্তানের ফি ${childFee} টাকা`;
+
+        renderFooterCredit(activeConfig.footerCredit);
     }
 
     async function initFirestoreAndSyncSettings() {
         try {
-            const savedFbCfg = JSON.parse(localStorage.getItem(FB_CONFIG_KEY) || 'null');
-            if (!savedFbCfg || !savedFbCfg.apiKey || !savedFbCfg.projectId || !savedFbCfg.appId) {
+            const fbCfg = getActiveFirebaseConfig();
+            if (!fbCfg || !fbCfg.apiKey || !fbCfg.projectId || !fbCfg.appId) {
                 return;
             }
-            const app = getApps().length ? getApps()[0] : initializeApp(savedFbCfg);
+            const app = getApps().length ? getApps()[0] : initializeApp(fbCfg);
             const db = getFirestore(app);
             dbInstance = db;
 
