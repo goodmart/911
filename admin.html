@@ -41,8 +41,8 @@
 
         /* Login Gate */
         .login-wrapper {
-            max-width: 460px;
-            margin: 40px auto;
+            max-width: 420px;
+            margin: 60px auto;
             background: var(--card-bg);
             padding: 28px 24px;
             border-radius: 12px;
@@ -61,23 +61,6 @@
             color: #64748b;
             margin-bottom: 18px;
             text-align: center;
-        }
-
-        .login-config-box {
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
-            padding: 12px;
-            margin-bottom: 14px;
-        }
-
-        .login-config-toggle {
-            font-size: 12px;
-            font-weight: 700;
-            color: var(--primary);
-            cursor: pointer;
-            display: inline-block;
-            margin-bottom: 8px;
         }
 
         .topbar {
@@ -388,36 +371,6 @@
 
     <div id="loginErrorBox" class="login-error"></div>
 
-    <div class="login-config-box">
-        <span class="login-config-toggle" onclick="toggleLoginConfigFields()">⚙️ Firebase Config দেখুন / পরিবর্তন করুন</span>
-        <div id="loginConfigFields" class="hidden">
-            <div class="form-group">
-                <label for="loginFbApiKey">apiKey *</label>
-                <input type="text" id="loginFbApiKey" placeholder="AIzaSy...">
-            </div>
-            <div class="form-group">
-                <label for="loginFbAuthDomain">authDomain</label>
-                <input type="text" id="loginFbAuthDomain" placeholder="reunion-registration-911.firebaseapp.com">
-            </div>
-            <div class="form-group">
-                <label for="loginFbProjectId">projectId *</label>
-                <input type="text" id="loginFbProjectId" placeholder="reunion-registration-911">
-            </div>
-            <div class="form-group">
-                <label for="loginFbStorageBucket">storageBucket</label>
-                <input type="text" id="loginFbStorageBucket" placeholder="reunion-registration-911.firebasestorage.app">
-            </div>
-            <div class="form-group">
-                <label for="loginFbMessagingSenderId">messagingSenderId</label>
-                <input type="text" id="loginFbMessagingSenderId" placeholder="1234567890">
-            </div>
-            <div class="form-group" style="margin-bottom: 0;">
-                <label for="loginFbAppId">appId *</label>
-                <input type="text" id="loginFbAppId" placeholder="1:123456:web:abcdef">
-            </div>
-        </div>
-    </div>
-
     <form id="loginForm">
         <div class="form-group">
             <label for="adminEmailInput">অ্যাডমিন ইমেইল *</label>
@@ -603,6 +556,15 @@
     const SETTINGS_KEY = 'reunion_2027_admin_settings';
     const REGISTRATIONS_KEY = 'reunion_2027_registrations_list';
 
+    const DEFAULT_FIREBASE_CONFIG = {
+        apiKey: "AIzaSyBemP7RKjLfq2Xvk6udcS6O1s6-1AdRleE",
+        authDomain: "reunion-registration-911.firebaseapp.com",
+        projectId: "reunion-registration-911",
+        storageBucket: "reunion-registration-911.firebasestorage.app",
+        messagingSenderId: "622863743452",
+        appId: "1:622863743452:web:b2618a59898ba4e224b719"
+    };
+
     const DEFAULT_SETTINGS = {
         bkashNumber: "01700000000",
         paymentNote: "নিচের পার্সোনাল নম্বরে উল্লিখিত টাকা Send Money করে ট্রানজেকশন আইডি (TrxID) সংগ্রহ করুন:",
@@ -634,12 +596,17 @@
     let dbInstance = null;
     let isCloudConnected = false;
     let unsubscribeRegistrations = null;
-    let unsubscribeAuth = null;
     let cloudRegistrations = [];
 
-    window.toggleLoginConfigFields = function () {
-        document.getElementById('loginConfigFields').classList.toggle('hidden');
-    };
+    function getActiveFirebaseConfig() {
+        try {
+            const saved = JSON.parse(localStorage.getItem(FB_CONFIG_KEY) || 'null');
+            if (saved && saved.apiKey && saved.projectId && saved.appId) {
+                return saved;
+            }
+        } catch {}
+        return { ...DEFAULT_FIREBASE_CONFIG };
+    }
 
     function showLoginError(msg) {
         const box = document.getElementById('loginErrorBox');
@@ -715,20 +682,12 @@
     }
 
     function fillConfigInputs(cfg) {
-        const pairs = [
-            ['fbApiKey', 'loginFbApiKey', cfg?.apiKey || ''],
-            ['fbAuthDomain', 'loginFbAuthDomain', cfg?.authDomain || ''],
-            ['fbProjectId', 'loginFbProjectId', cfg?.projectId || ''],
-            ['fbStorageBucket', 'loginFbStorageBucket', cfg?.storageBucket || ''],
-            ['fbMessagingSenderId', 'loginFbMessagingSenderId', cfg?.messagingSenderId || ''],
-            ['fbAppId', 'loginFbAppId', cfg?.appId || '']
-        ];
-        pairs.forEach(([dashId, loginId, val]) => {
-            const dEl = document.getElementById(dashId);
-            const lEl = document.getElementById(loginId);
-            if (dEl) dEl.value = val;
-            if (lEl) lEl.value = val;
-        });
+        document.getElementById('fbApiKey').value = cfg?.apiKey || '';
+        document.getElementById('fbAuthDomain').value = cfg?.authDomain || '';
+        document.getElementById('fbProjectId').value = cfg?.projectId || '';
+        document.getElementById('fbStorageBucket').value = cfg?.storageBucket || '';
+        document.getElementById('fbMessagingSenderId').value = cfg?.messagingSenderId || '';
+        document.getElementById('fbAppId').value = cfg?.appId || '';
     }
 
     function readConfigFromDashboard() {
@@ -740,21 +699,6 @@
             messagingSenderId: document.getElementById('fbMessagingSenderId').value.trim(),
             appId: document.getElementById('fbAppId').value.trim()
         };
-    }
-
-    function readConfigFromLogin() {
-        const saved = (() => {
-            try { return JSON.parse(localStorage.getItem(FB_CONFIG_KEY) || 'null'); } catch { return null; }
-        })() || {};
-
-        const apiKey = document.getElementById('loginFbApiKey').value.trim() || saved.apiKey || '';
-        const authDomain = document.getElementById('loginFbAuthDomain').value.trim() || saved.authDomain || '';
-        const projectId = document.getElementById('loginFbProjectId').value.trim() || saved.projectId || '';
-        const storageBucket = document.getElementById('loginFbStorageBucket').value.trim() || saved.storageBucket || '';
-        const messagingSenderId = document.getElementById('loginFbMessagingSenderId').value.trim() || saved.messagingSenderId || '';
-        const appId = document.getElementById('loginFbAppId').value.trim() || saved.appId || '';
-
-        return { apiKey, authDomain, projectId, storageBucket, messagingSenderId, appId };
     }
 
     function stopRegistrationsListener() {
@@ -890,13 +834,7 @@
 
         const email = document.getElementById('adminEmailInput').value.trim();
         const password = document.getElementById('adminPasswordInput').value;
-        const cfg = readConfigFromLogin();
-
-        if (!cfg.apiKey || !cfg.projectId || !cfg.appId) {
-            document.getElementById('loginConfigFields').classList.remove('hidden');
-            showLoginError("আগে Firebase Config (apiKey, projectId, appId) দিন বা সেভ করুন।");
-            return;
-        }
+        const cfg = getActiveFirebaseConfig();
 
         const btn = document.getElementById('loginSubmitBtn');
         btn.disabled = true;
@@ -924,25 +862,19 @@
         loadSettingsToMemory();
         renderRegistrationsTable();
 
-        const savedCfg = (() => {
-            try { return JSON.parse(localStorage.getItem(FB_CONFIG_KEY) || 'null'); } catch { return null; }
-        })();
+        const cfg = getActiveFirebaseConfig();
+        fillConfigInputs(cfg);
 
-        if (savedCfg) {
-            fillConfigInputs(savedCfg);
-            if (dbInstance) {
-                try {
-                    await syncSettingsFromCloud(dbInstance);
-                    updateCloudBadge(true);
-                    startRegistrationsListener(dbInstance);
-                } catch {
-                    updateCloudBadge(false);
-                }
-            } else {
-                await initFirebaseConnection(savedCfg, true);
+        if (dbInstance) {
+            try {
+                await syncSettingsFromCloud(dbInstance);
+                updateCloudBadge(true);
+                startRegistrationsListener(dbInstance);
+            } catch {
+                updateCloudBadge(false);
             }
         } else {
-            updateCloudBadge(false);
+            await initFirebaseConnection(cfg, true);
         }
     }
 
@@ -1288,24 +1220,20 @@
 
     // Startup Auth Listener
     (async () => {
-        const savedCfg = (() => {
-            try { return JSON.parse(localStorage.getItem(FB_CONFIG_KEY) || 'null'); } catch { return null; }
-        })();
-        if (savedCfg) {
-            fillConfigInputs(savedCfg);
-            const ok = await ensureFirebaseInitialized(savedCfg);
-            if (ok && authInstance) {
-                unsubscribeAuth = onAuthStateChanged(authInstance, async (user) => {
-                    if (user) {
-                        await showDashboardForUser(user);
-                    } else {
-                        showLoginScreen();
-                    }
-                });
-                return;
-            }
+        const cfg = getActiveFirebaseConfig();
+        fillConfigInputs(cfg);
+        const ok = await ensureFirebaseInitialized(cfg);
+        if (ok && authInstance) {
+            onAuthStateChanged(authInstance, async (user) => {
+                if (user) {
+                    await showDashboardForUser(user);
+                } else {
+                    showLoginScreen();
+                }
+            });
+        } else {
+            showLoginScreen();
         }
-        showLoginScreen();
     })();
 </script>
 
