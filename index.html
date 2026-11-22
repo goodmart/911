@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ঈদ পুনর্মিলনী রেজিস্ট্রেশন</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f6f9; margin: 0; padding: 20px; }
+        .container { max-width: 600px; margin: auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        h2 { text-align: center; color: #1a5f7a; margin-bottom: 25px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; color: #333; }
+        input[type="text"], input[type="tel"], select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        .dynamic-row { background: #eef2f7; padding: 10px; margin-top: 10px; border-radius: 4px; position: relative; }
+        button { width: 100%; background-color: #1a5f7a; color: white; padding: 12px; border: none; border-radius: 4px; font-size: 16px; cursor: pointer; margin-top: 15px; }
+        button:hover { background-color: #154c62; }
+        .btn-add { background-color: #28a745; width: auto; padding: 5px 10px; font-size: 14px; margin-top: 5px; }
+        .btn-remove { background-color: #dc3545; width: auto; padding: 5px 10px; font-size: 14px; margin-top: 5px; margin-bottom: 10px; }
+        #registrationOutput { margin-top: 20px; padding: 15px; background: #d4edda; color: #155724; border-radius: 4px; display: none; text-align: center; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>ঈদ পুনর্মিলনী ২০২৬ রেজিস্ট্রেশন</h2>
+    <form id="registrationForm">
+        <div class="form-group">
+            <label for="schoolName">স্কুলের নাম</label>
+            <select id="schoolName" required>
+                <option value="">স্কুল নির্বাচন করুন</option>
+                <!-- অ্যাডমিন প্যানেল থেকে এই অপশনগুলো আসবে -->
+                <option value="School A">সরকারি করোনেশন মাধ্যমিক বিদ্যালয়</option>
+                <option value="School B">আর.কে হাই স্কুল</option>
+                <option value="School C">ক্যান্টনমেন্ট পাবলিক স্কুল ও কলেজ</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="fullName">আবেদনকারীর নাম</label>
+            <input type="text" id="fullName" required placeholder="আপনার নাম লিখুন">
+        </div>
+
+        <div class="form-group">
+            <label for="mobileNo">মোবাইল নম্বর</label>
+            <input type="tel" id="mobileNo" required placeholder="01XXXXXXXXX">
+        </div>
+
+        <div class="form-group">
+            <label for="bloodGroup">ব্লাড গ্রুপ</label>
+            <select id="bloodGroup" required>
+                <option value="">গ্রুপ সিলেক্ট করুন</option>
+                <option value="A+">A+</option>
+                <option value="A-">A-</option>
+                <option value="B+">B+</option>
+                <option value="B-">B-</option>
+                <option value="O+">O+</option>
+                <option value="O-">O-</option>
+                <option value="AB+">AB+</option>
+                <option value="AB-">AB-</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="tshirtSize">টি-শার্ট সাইজ</label>
+            <select id="tshirtSize" required>
+                <option value="">সাইজ সিলেক্ট করুন</option>
+                <option value="S">S</option>
+                <option value="M">M</option>
+                <option value="L">L</option>
+                <option value="XL">XL</option>
+                <option value="XXL">XXL</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>স্বামী/স্ত্রী</label>
+            <div>
+                <input type="checkbox" id="hasSpouse" onchange="toggleSpouseField()"> সাথে আনছেন?
+            </div>
+            <div id="spouseField" style="display:none; margin-top:10px;">
+                <input type="text" id="spouseName" placeholder="স্বামী/স্ত্রীর নাম">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>সন্তান (Children)</label>
+            <div id="childrenContainer"></div>
+            <button type="button" class="btn-add" onclick="addChild()">+ সন্তান যোগ করুন</button>
+        </div>
+
+        <div class="form-group">
+            <label for="extraPerformance">এক্সট্রা পারফরম্যান্স (ঐচ্ছিক)</label>
+            <select id="extraPerformance">
+                <option value="">পারফরম্যান্স সিলেক্ট করুন</option>
+                <!-- অ্যাডমিন প্যানেল থেকে এই অপশনগুলো আসবে -->
+                <option value="Singing">গান</option>
+                <option value="Recitation">আবৃত্তি</option>
+                <option value="Dancing">নাচ</option>
+            </select>
+        </div>
+
+        <hr>
+
+        <h4>পেমেন্ট ইনফরমেশন</h4>
+        <div class="form-group">
+            <label>মার্চেন্ট নম্বরসমূহ:</label>
+            <p style="background: #eee; padding: 10px; border-radius: 4px;">
+                বিকাশ: 017XXXXXX89<br>
+                নগদ: 018YYYYYY90
+            </p>
+        </div>
+
+        <div class="form-group">
+            <label for="paymentMethod">পেমেন্ট মেথড</label>
+            <select id="paymentMethod" required>
+                <option value="">মেথড সিলেক্ট করুন</option>
+                <option value="Bkash">বিকাশ</option>
+                <option value="Nagad">নগদ</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="transactionId">ট্রানজেকশন আইডি</label>
+            <input type="text" id="transactionId" required placeholder="সঠিক ট্রানজেকশন আইডি দিন">
+        </div>
+
+        <button type="submit">রেজিস্ট্রেশন সম্পন্ন করুন</button>
+    </form>
+
+    <div id="registrationOutput"></div>
+</div>
+
+<script>
+    let childCount = 0;
+
+    function toggleSpouseField() {
+        const checkBox = document.getElementById("hasSpouse");
+        const spouseField = document.getElementById("spouseField");
+        spouseField.style.display = checkBox.checked ? "block" : "none";
+    }
+
+    function addChild() {
+        childCount++;
+        const container = document.getElementById("childrenContainer");
+        const div = document.createElement("div");
+        div.className = "dynamic-row";
+        div.id = `childRow_${childCount}`;
+        div.innerHTML = `
+            <label>সন্তান ${childCount}-এর বয়স:</label>
+            <input type="number" placeholder="বয়স লিখুন" required style="margin-bottom:10px;">
+            <button type="button" class="btn-remove" onclick="removeChild(${childCount})">বাদ দিন</button>
+        `;
+        container.appendChild(div);
+    }
+
+    function removeChild(id) {
+        const row = document.getElementById(`childRow_${id}`);
+        row.parentNode.removeChild(row);
+    }
+
+    document.getElementById("registrationForm").addEventListener("submit", function(e) {
+        e.preventDefault();
+
+        // পেমেন্ট ভেরিফিকেশন সিমুলেশন (প্রকৃত অ্যাপে এটি ব্যাকএন্ড এপিআই কল করবে)
+        const txId = document.getElementById("transactionId").value;
+        const isPaymentValid = txId.startsWith("TXN"); // উদাহরণস্বরূপ TXN দিয়ে শুরু হলে ভ্যালিড
+
+        if (!isPaymentValid) {
+            alert("দুঃখিত, ট্রানজেকশন আইডিটি সঠিক নয়। অনুগ্রহ করে পুনরায় চেষ্টা করুন। (টেস্টের জন্য TXN দিয়ে শুরু হওয়া আইডি দিন)");
+            return;
+        }
+
+        // রেজিস্ট্রেশন নম্বর জেনারেশন (০৯১১০০০০১ ফরম্যাট)
+        const uniqueNumber = Math.floor(10000 + Math.random() * 90000);
+        const registrationNumber = "0911" + uniqueNumber;
+
+        const outputDiv = document.getElementById("registrationOutput");
+        outputDiv.style.display = "block";
+        outputDiv.innerHTML = `অভিনন্দন! আপনার রেজিস্ট্রেশন সফল হয়েছে।<br>আপনার রেজিস্ট্রেশন নম্বর: ${registrationNumber}`;
+        
+        // ফর্ম রিসেট
+        document.getElementById("registrationForm").reset();
+        document.getElementById("spouseField").style.display = "none";
+        document.getElementById("childrenContainer").innerHTML = "";
+    });
+</script>
+
+</body>
+</html>
