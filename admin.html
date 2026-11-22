@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>অ্যাডমিন প্যানেল - ঈদ পুনর্মিলনী ২০২৬</title>
+    <style>
+        :root {
+            --primary: #0f766e;
+            --primary-hover: #115e59;
+            --bg: #f1f5f9;
+            --card-bg: #ffffff;
+            --text: #1e293b;
+            --border: #cbd5e1;
+            --danger: #ef4444;
+            --edit: #f59e0b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            padding: 20px 12px;
+        }
+
+        .container {
+            max-width: 850px;
+            margin: 0 auto;
+        }
+
+        .topbar {
+            background: var(--primary);
+            color: white;
+            padding: 18px 24px;
+            border-radius: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 24px;
+        }
+
+        .topbar h1 {
+            font-size: 20px;
+        }
+
+        .btn-link {
+            background: #ffffff;
+            color: var(--primary);
+            text-decoration: none;
+            padding: 8px 14px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 20px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+        }
+
+        .card h2 {
+            font-size: 17px;
+            color: var(--primary);
+            margin-bottom: 14px;
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 8px;
+        }
+
+        .add-group {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 9px 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 14px;
+            outline: none;
+        }
+
+        input[type="text"]:focus {
+            border-color: var(--primary);
+        }
+
+        .btn-add {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 9px 14px;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .btn-add:hover {
+            background: var(--primary-hover);
+        }
+
+        ul {
+            list-style: none;
+            max-height: 320px;
+            overflow-y: auto;
+        }
+
+        li {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 9px 10px;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            background: #f8fafc;
+            font-size: 14px;
+            gap: 8px;
+        }
+
+        li span {
+            word-break: break-word;
+            flex: 1;
+        }
+
+        .actions {
+            display: flex;
+            gap: 5px;
+            flex-shrink: 0;
+        }
+
+        .btn-edit, .btn-del {
+            border: none;
+            padding: 5px 8px;
+            border-radius: 4px;
+            color: white;
+            font-size: 12px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .btn-edit { background: var(--edit); }
+        .btn-del { background: var(--danger); }
+
+        .reset-section {
+            margin-top: 24px;
+            text-align: right;
+        }
+
+        .btn-reset {
+            background: #64748b;
+            color: white;
+            border: none;
+            padding: 8px 14px;
+            border-radius: 6px;
+            font-size: 13px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="topbar">
+        <h1>অ্যাডমিন প্যানেল - ড্রপডাউন ম্যানেজমেন্ট</h1>
+        <a href="index.html" target="_blank" class="btn-link">রেজিস্ট্রেশন ফর্ম দেখুন ↗</a>
+    </div>
+
+    <div class="grid">
+        <!-- স্কুলের তালিকা -->
+        <div class="card">
+            <h2>১. প্রতিষ্ঠান / স্কুলের নাম</h2>
+            <div class="add-group">
+                <input type="text" id="schoolInput" placeholder="নতুন স্কুলের নাম লিখুন...">
+                <button class="btn-add" onclick="addItem('schools', 'schoolInput')">যোগ</button>
+            </div>
+            <ul id="schoolsList"></ul>
+        </div>
+
+        <!-- রক্তের গ্রুপ -->
+        <div class="card">
+            <h2>২. রক্তের গ্রুপ</h2>
+            <div class="add-group">
+                <input type="text" id="bloodInput" placeholder="যেমন: O+ বা জানা নেই">
+                <button class="btn-add" onclick="addItem('bloodGroups', 'bloodInput')">যোগ</button>
+            </div>
+            <ul id="bloodGroupsList"></ul>
+        </div>
+
+        <!-- টি-শার্ট সাইজ -->
+        <div class="card">
+            <h2>৩. টি-শার্ট সাইজ</h2>
+            <div class="add-group">
+                <input type="text" id="tshirtInput" placeholder="যেমন: XL (44)">
+                <button class="btn-add" onclick="addItem('tshirtSizes', 'tshirtInput')">যোগ</button>
+            </div>
+            <ul id="tshirtSizesList"></ul>
+        </div>
+    </div>
+
+    <div class="reset-section">
+        <button class="btn-reset" onclick="resetDefaults()">ডিফল্ট তালিকায় ফিরে যান (Reset)</button>
+    </div>
+</div>
+
+<script>
+    // ডিফল্ট ডেটা
+    const DEFAULT_DATA = {
+        schools: [
+            "রংপুর জিলা স্কুল",
+            "সরকারি বালিকা উচ্চ বিদ্যালয়",
+            "ক্যান্টনমেন্ট পাবলিক স্কুল ও কলেজ",
+            "পুলিশ লাইন্স স্কুল অ্যান্ড কলেজ",
+            "অন্যান্য"
+        ],
+        bloodGroups: [
+            "A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-", "জানা নেই"
+        ],
+        tshirtSizes: [
+            "S (38)", "M (40)", "L (42)", "XL (44)", "XXL (46)"
+        ]
+    };
+
+    // লোকাল স্টোরেজ থেকে ডেটা লোড বা ইনিশিয়ালাইজ করা
+    function getData(key) {
+        const stored = localStorage.getItem('reunion_' + key);
+        if (!stored) {
+            localStorage.setItem('reunion_' + key, JSON.stringify(DEFAULT_DATA[key]));
+            return [...DEFAULT_DATA[key]];
+        }
+        return JSON.parse(stored);
+    }
+
+    function saveData(key, list) {
+        localStorage.setItem('reunion_' + key, JSON.stringify(list));
+        renderList(key);
+    }
+
+    // তালিকা স্ক্রিনে দেখানো
+    function renderList(key) {
+        const list = getData(key);
+        const ul = document.getElementById(key + 'List');
+        ul.innerHTML = '';
+
+        list.forEach((item, index) => {
+            const li = document.createElement('li');
+            li.innerHTML = `
+                <span>${item}</span>
+                <div class="actions">
+                    <button class="btn-edit" onclick="editItem('${key}', ${index})">এডিট</button>
+                    <button class="btn-del" onclick="deleteItem('${key}', ${index})">ডিলিট</button>
+                </div>
+            `;
+            ul.appendChild(li);
+        });
+    }
+
+    // নতুন আইটেম যোগ করা
+    function addItem(key, inputId) {
+        const input = document.getElementById(inputId);
+        const val = input.value.trim();
+        if (!val) return alert("অনুগ্রহ করে কিছু লিখুন!");
+
+        const list = getData(key);
+        if (list.includes(val)) {
+            return alert("এই নামটি ইতিমধ্যেই তালিকায় আছে!");
+        }
+
+        list.push(val);
+        saveData(key, list);
+        input.value = '';
+    }
+
+    // আইটেম এডিট করা
+    function editItem(key, index) {
+        const list = getData(key);
+        const currentVal = list[index];
+        const newVal = prompt("নতুন নাম লিখুন:", currentVal);
+
+        if (newVal !== null && newVal.trim() !== "") {
+            list[index] = newVal.trim();
+            saveData(key, list);
+        }
+    }
+
+    // আইটেম ডিলিট করা
+    function deleteItem(key, index) {
+        const list = getData(key);
+        if (confirm(`আপনি কি নিশ্চিতভাবে "${list[index]}" মুছে ফেলতে চান?`)) {
+            list.splice(index, 1);
+            saveData(key, list);
+        }
+    }
+
+    // ডিফল্ট রিসেট
+    function resetDefaults() {
+        if (confirm("সব তালিকা কি আগের ডিফল্ট অবস্থায় ফিরিয়ে নিতে চান?")) {
+            localStorage.setItem('reunion_schools', JSON.stringify(DEFAULT_DATA.schools));
+            localStorage.setItem('reunion_bloodGroups', JSON.stringify(DEFAULT_DATA.bloodGroups));
+            localStorage.setItem('reunion_tshirtSizes', JSON.stringify(DEFAULT_DATA.tshirtSizes));
+            init();
+        }
+    }
+
+    function init() {
+        renderList('schools');
+        renderList('bloodGroups');
+        renderList('tshirtSizes');
+    }
+
+    init();
+</script>
+
+</body>
+</html>
