@@ -469,7 +469,11 @@
     </div>
 </div>
 
-<script>
+<script type="module">
+    import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getFirestore, doc, getDoc, collection, addDoc, getDocs, query, where, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    const FB_CONFIG_KEY = 'reunion_2027_firebase_config';
     const SETTINGS_KEY = 'reunion_2027_admin_settings';
     const REGISTRATIONS_KEY = 'reunion_2027_registrations_list';
     const BD_MOBILE_REGEX = /^01[3-9]\d{8}$/;
@@ -500,6 +504,7 @@
 
     let activeConfig = JSON.parse(JSON.stringify(DEFAULT_SETTINGS));
     let calculatedTotalAmount = 0;
+    let dbInstance = null;
 
     function getSafeConfig() {
         try {
@@ -573,8 +578,15 @@
         }
     }
 
-    function loadAdminConfig() {
-        activeConfig = getSafeConfig();
+    function applyConfigToForm(cfgObj) {
+        activeConfig = {
+            ...JSON.parse(JSON.stringify(DEFAULT_SETTINGS)),
+            ...(cfgObj || {}),
+            fees: {
+                ...DEFAULT_SETTINGS.fees,
+                ...((cfgObj && cfgObj.fees) || {})
+            }
+        };
 
         populateSelect('school', activeConfig.schools, '-- স্কুল নির্বাচন করুন --');
         populateSelect('bloodGroup', activeConfig.bloodGroups, 'নির্বাচন করুন');
@@ -587,11 +599,39 @@
         const maxFreeAge = activeConfig.fees.freeChildMaxAge;
         const childFee = activeConfig.fees.child;
         document.getElementById('childFeeHint').textContent = maxFreeAge > 0
-            ? `* ${maxFreeAge} বছর বা তার কম বয়সী সন্তানের জন্য ফ্রি; ${maxFreeAge} বছরের বেশি হলে প্রতিজন ${childFee} টাকা`
+            ? `* ${maxFreeAge} বছর বা তার কম বয়সী সন্তানের জন্য ফ্রি; ${maxFreeAge} বছরের বেশি হলে প্রতিজন ${childFee} টাকা`
             : `* প্রতিজন সন্তানের ফি ${childFee} টাকা`;
     }
 
-    window.addEventListener('DOMContentLoaded', loadAdminConfig);
+    async function initFirestoreAndSyncSettings() {
+        try {
+            const savedFbCfg = JSON.parse(localStorage.getItem(FB_CONFIG_KEY) || 'null');
+            if (!savedFbCfg || !savedFbCfg.apiKey || !savedFbCfg.projectId || !savedFbCfg.appId) {
+                return;
+            }
+            const app = getApps().length ? getApps()[0] : initializeApp(savedFbCfg);
+            const db = getFirestore(app);
+            dbInstance = db;
+
+            const snap = await getDoc(doc(db, "reunion_2027_config", "settings"));
+            if (snap.exists()) {
+                const cloudSettings = snap.data();
+                localStorage.setItem(SETTINGS_KEY, JSON.stringify(cloudSettings));
+                applyConfigToForm(cloudSettings);
+            }
+        } catch (err) {
+            console.warn("Firestore settings sync skipped/fallback to local:", err);
+        }
+    }
+
+    function loadAdminConfig() {
+        applyConfigToForm(getSafeConfig());
+    }
+
+    window.addEventListener('DOMContentLoaded', async () => {
+        loadAdminConfig();
+        await initFirestoreAndSyncSettings();
+    });
 
     window.addEventListener('storage', function(e) {
         if (e.key === SETTINGS_KEY) {
@@ -599,18 +639,18 @@
         }
     });
 
-    function copyBkashNumber() {
+    window.copyBkashNumber = function () {
         const num = document.getElementById('dynamicBkashNumber').textContent.trim();
         const btn = document.getElementById('copyNumberBtn');
         if (navigator.clipboard && num) {
             navigator.clipboard.writeText(num).then(() => {
-                btn.textContent = "কপি হয়েছে ✓";
+                btn.textContent = "কপি হয়েছে ✓";
                 setTimeout(() => { btn.textContent = "নম্বর কপি করুন"; }, 2000);
             });
         }
-    }
+    };
 
-    function toggleSpouseField() {
+    window.toggleSpouseField = function () {
         const isChecked = document.getElementById('hasSpouse').checked;
         const container = document.getElementById('spouseFieldContainer');
         const spouseInput = document.getElementById('spouseName');
@@ -621,9 +661,9 @@
             container.classList.add('hidden');
             spouseInput.value = '';
         }
-    }
+    };
 
-    function addChildField() {
+    window.addChildField = function () {
         const container = document.getElementById('childrenContainer');
         const row = document.createElement('div');
         row.className = 'child-row';
@@ -635,12 +675,12 @@
         `;
         
         container.appendChild(row);
-    }
+    };
 
-    function removeChildField(buttonElement) {
+    window.removeChildField = function (buttonElement) {
         const row = buttonElement.closest('.child-row');
         if (row) row.remove();
-    }
+    };
 
     function createSummaryLine(label, amountText) {
         const div = document.createElement('div');
@@ -654,7 +694,7 @@
         return div;
     }
 
-    function goToStep2() {
+    window.goToStep2 = function () {
         const school = document.getElementById('school').value.trim();
         const name = document.getElementById('applicantName').value.trim();
         const mobile = document.getElementById('mobile').value.trim();
@@ -693,7 +733,7 @@
             const cAge = Number(cAgeRaw);
 
             if (!cName || cAgeRaw === '' || isNaN(cAge) || cAge < 0 || cAge > 25) {
-                errorMsg.textContent = "প্রতিটি সন্তানের সঠিক নাম ও বয়স (০ থেকে ২৫ বছরের মধ্যে) লিখুন, অথবা ✕ চেপে বাদ দিন।";
+                errorMsg.textContent = "প্রতিটি সন্তানের সঠিক নাম ও বয়স (০ থেকে ২৫ বছরের মধ্যে) লিখুন, অথবা ✕ চেপে বাদ দিন।";
                 errorMsg.style.display = 'block';
                 return;
             }
@@ -739,21 +779,34 @@
         document.getElementById('badge1').classList.remove('active');
         document.getElementById('badge2').classList.add('active');
         window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
+    };
 
-    function goToStep1() {
+    window.goToStep1 = function () {
         document.getElementById('step2').classList.add('hidden');
         document.getElementById('step1').classList.remove('hidden');
         document.getElementById('badge2').classList.remove('active');
         document.getElementById('badge1').classList.add('active');
-    }
+    };
 
     async function verifyGatewayPayment(trxId, expectedAmount) {
         const existing = getSafeRegistrations();
-        const isDuplicateTrx = existing.some(r => String(r.trxId).toUpperCase() === trxId.toUpperCase());
-        if (isDuplicateTrx) {
-            return { verified: false, reason: "এই ট্রানজেকশন আইডি (TrxID) ইতিমধ্যেই ব্যবহৃত হয়েছে!" };
+        const isDuplicateLocal = existing.some(r => String(r.trxId).toUpperCase() === trxId.toUpperCase());
+        if (isDuplicateLocal) {
+            return { verified: false, reason: "এই ট্রানজেকশন আইডি (TrxID) ইতিমধ্যেই ব্যবহৃত হয়েছে!" };
         }
+
+        if (dbInstance) {
+            try {
+                const q = query(collection(dbInstance, "registrations"), where("trxId", "==", trxId.toUpperCase()));
+                const snap = await getDocs(q);
+                if (!snap.empty) {
+                    return { verified: false, reason: "এই ট্রানজেকশন আইডি (TrxID) ইতিমধ্যেই ক্লাউডে ব্যবহৃত হয়েছে!" };
+                }
+            } catch (e) {
+                console.warn("Duplicate check skipped:", e);
+            }
+        }
+
         return { verified: true, gatewayTrxId: trxId };
     }
 
@@ -773,7 +826,7 @@
             ["Blood Group", data.bloodGroup],
             ["TShirt Size", data.tshirt],
             ["Spouse Name", data.spouse || "-"],
-            ["Children (নাম ও বয়স)", childrenDetailText],
+            ["Children (নাম ও বয়স)", childrenDetailText],
             ["Total Amount", `${data.totalAmount} টাকা`],
             ["Sender Number", data.bkashSender],
             ["TrxID", data.trxId],
@@ -838,7 +891,21 @@
 
         const now = new Date();
         const existingList = getSafeRegistrations();
-        const regNumber = getNextRegistrationNumber(existingList);
+        let regNumber = getNextRegistrationNumber(existingList);
+
+        if (dbInstance) {
+            try {
+                const snap = await getDocs(collection(dbInstance, "registrations"));
+                snap.forEach(d => {
+                    const num = Number(d.data()?.registrationNumber);
+                    if (!isNaN(num) && num >= regNumber) {
+                        regNumber = num + 1;
+                    }
+                });
+            } catch (e) {
+                console.warn("Cloud reg number check fallback:", e);
+            }
+        }
 
         const registrationData = {
             registrationNumber: regNumber,
@@ -860,6 +927,22 @@
 
         existingList.push(registrationData);
         localStorage.setItem(REGISTRATIONS_KEY, JSON.stringify(existingList));
+
+        if (dbInstance) {
+            try {
+                await addDoc(collection(dbInstance, "registrations"), {
+                    ...registrationData,
+                    createdAt: serverTimestamp()
+                });
+            } catch (err) {
+                console.error("Failed to save registration to Firestore:", err);
+                submitBtn.disabled = false;
+                submitBtn.textContent = "রেজিস্ট্রেশন সম্পন্ন করুন";
+                errorMsg.textContent = "লোকালি সেভ হয়েছে, কিন্তু Firestore-এ পাঠাতে সমস্যা হয়েছে। Firestore Rules চেক করুন।";
+                errorMsg.style.display = 'block';
+                return;
+            }
+        }
 
         renderReceiptCard(registrationData);
 
