@@ -59,7 +59,6 @@
             color: #64748b;
         }
 
-        /* Step Indicator */
         .steps {
             display: flex;
             justify-content: space-between;
@@ -117,7 +116,6 @@
             gap: 12px;
         }
 
-        /* Family & Dynamic Children Section */
         .family-box {
             background: #f8fafc;
             border: 1px solid #e2e8f0;
@@ -175,10 +173,6 @@
             flex-shrink: 0;
         }
 
-        .btn-remove:hover {
-            background: #dc2626;
-        }
-
         .btn-add {
             background: #e0f2fe;
             color: #0369a1;
@@ -192,11 +186,6 @@
             width: 100%;
         }
 
-        .btn-add:hover {
-            background: #bae6fd;
-        }
-
-        /* Buttons */
         .btn-primary {
             background: var(--primary);
             color: white;
@@ -232,7 +221,6 @@
             margin-top: 16px;
         }
 
-        /* Payment Summary Box */
         .payment-summary {
             background: #ecfdf5;
             border: 1px solid #6ee7b7;
@@ -271,6 +259,7 @@
             margin-bottom: 16px;
             font-size: 14px;
             color: #9d174d;
+            line-height: 1.5;
         }
 
         .hidden {
@@ -282,6 +271,7 @@
             font-size: 13px;
             margin-top: 5px;
             display: none;
+            font-weight: 600;
         }
 
         .success-box {
@@ -303,25 +293,17 @@
         <p>অনলাইন রেজিস্ট্রেশন ফর্ম</p>
     </div>
 
-    <!-- Step Indicator -->
     <div class="steps" id="stepIndicator">
         <div class="step-badge active" id="badge1">১. ব্যক্তিগত ও পারিবারিক তথ্য</div>
         <div class="step-badge" id="badge2">২. পেমেন্ট সম্পন্ন করুন</div>
     </div>
 
     <form id="reunionForm" novalidate>
-        <!-- STEP 1: PERSONAL & FAMILY INFO -->
+        <!-- STEP 1 -->
         <div id="step1">
             <div class="form-group">
                 <label for="school">প্রতিষ্ঠান / স্কুলের নাম *</label>
-                <select id="school" required>
-                    <option value="">-- স্কুল নির্বাচন করুন --</option>
-                    <option value="রংপুর জিলা স্কুল">রংপুর জিলা স্কুল</option>
-                    <option value="সরকারি বালিকা উচ্চ বিদ্যালয়">সরকারি বালিকা উচ্চ বিদ্যালয়</option>
-                    <option value="ক্যান্টনমেন্ট পাবলিক স্কুল ও কলেজ">ক্যান্টনমেন্ট পাবলিক স্কুল ও কলেজ</option>
-                    <option value="পুলিশ লাইন্স স্কুল অ্যান্ড কলেজ">পুলিশ লাইন্স স্কুল অ্যান্ড কলেজ</option>
-                    <option value="অন্যান্য">অন্যান্য</option>
-                </select>
+                <select id="school" required></select>
             </div>
 
             <div class="form-group">
@@ -330,36 +312,19 @@
             </div>
 
             <div class="form-group">
-                <label for="mobile">মোবাইল নম্বর *</label>
-                <input type="tel" id="mobile" placeholder="017XXXXXXXX" required>
+                <label for="mobile">মোবাইল নম্বর (১১ ডিজিট) *</label>
+                <input type="tel" id="mobile" maxlength="11" placeholder="017XXXXXXXX" oninput="this.value = this.value.replace(/[^0-9]/g, '')" required>
             </div>
 
             <div class="row-2">
                 <div class="form-group">
                     <label for="bloodGroup">রক্তের গ্রুপ *</label>
-                    <select id="bloodGroup" required>
-                        <option value="">নির্বাচন করুন</option>
-                        <option value="A+">A+</option>
-                        <option value="A-">A-</option>
-                        <option value="B+">B+</option>
-                        <option value="B-">B-</option>
-                        <option value="O+">O+</option>
-                        <option value="O-">O-</option>
-                        <option value="AB+">AB+</option>
-                        <option value="AB-">AB-</option>
-                    </select>
+                    <select id="bloodGroup" required></select>
                 </div>
 
                 <div class="form-group">
                     <label for="tshirt">টি-শার্ট সাইজ *</label>
-                    <select id="tshirt" required>
-                        <option value="">নির্বাচন করুন</option>
-                        <option value="S">S (38)</option>
-                        <option value="M">M (40)</option>
-                        <option value="L">L (42)</option>
-                        <option value="XL">XL (44)</option>
-                        <option value="XXL">XXL (46)</option>
-                    </select>
+                    <select id="tshirt" required></select>
                 </div>
             </div>
 
@@ -382,11 +347,11 @@
                 <button type="button" class="btn-add" onclick="addChildField()">+ সন্তান যোগ করুন</button>
             </div>
 
-            <p class="error-msg" id="step1Error">অনুগ্রহ করে তারকা (*) চিহ্নিত সকল আবশ্যক তথ্য সঠিকভাবে পূরণ করুন।</p>
+            <p class="error-msg" id="step1Error"></p>
             <button type="button" class="btn-primary" onclick="goToStep2()">পরবর্তী ধাপ (Next) →</button>
         </div>
 
-        <!-- STEP 2: PAYMENT INFO -->
+        <!-- STEP 2 -->
         <div id="step2" class="hidden">
             <div class="payment-summary">
                 <h3>রেজিস্ট্রেশন ফি হিসাব</h3>
@@ -398,26 +363,26 @@
             </div>
 
             <div class="bkash-info">
-                <strong>বিকাশ পেমেন্ট নির্দেশনা:</strong><br>
-                নিচের পার্সোনাল নম্বরে উল্লিখিত টাকা <strong>Send Money</strong> করে ট্রানজেকশন আইডি (TrxID) সংগ্রহ করুন:<br>
-                <strong>বিকাশ নম্বর: 01700-000000</strong>
+                <strong>পেমেন্ট নির্দেশনা:</strong><br>
+                <span id="dynamicPaymentNote">নিচের পার্সোনাল নম্বরে উল্লিখিত টাকা Send Money করে ট্রানজেকশন আইডি (TrxID) সংগ্রহ করুন:</span><br>
+                <strong>বিকাশ / মার্চেন্ট নম্বর: <span id="dynamicBkashNumber">01700000000</span></strong>
             </div>
 
             <div class="form-group">
-                <label for="senderNumber">যে নম্বর থেকে টাকা পাঠিয়েছেন *</label>
-                <input type="tel" id="senderNumber" placeholder="01XXXXXXXXX" required>
+                <label for="senderNumber">যে নম্বর থেকে টাকা পাঠিয়েছেন (১১ ডিজিট) *</label>
+                <input type="tel" id="senderNumber" maxlength="11" placeholder="01XXXXXXXXX" oninput="this.value = this.value.replace(/[^0-9]/g, '')" required>
             </div>
 
             <div class="form-group">
-                <label for="trxId">বিকাশ ট্রানজেকশন আইডি (TrxID) *</label>
+                <label for="trxId">ট্রানজেকশন আইডি (TrxID) *</label>
                 <input type="text" id="trxId" placeholder="যেমন: 9H7G6F5D4S" style="text-transform: uppercase;" required>
             </div>
 
-            <p class="error-msg" id="step2Error">অনুগ্রহ করে সঠিক বিকাশ নম্বর এবং ট্রানজেকশন আইডি দিন।</p>
+            <p class="error-msg" id="step2Error"></p>
 
             <div class="btn-group">
                 <button type="button" class="btn-secondary" onclick="goToStep1()">← পূর্ববর্তী ধাপ</button>
-                <button type="submit" class="btn-primary" style="margin-top: 0;">রেজিস্ট্রেশন সম্পন্ন করুন</button>
+                <button type="submit" id="submitBtn" class="btn-primary" style="margin-top: 0;">রেজিস্ট্রেশন সম্পন্ন করুন</button>
             </div>
         </div>
     </form>
@@ -431,12 +396,53 @@
 </div>
 
 <script>
-    // ফি নির্ধারণ (আপনার প্রয়োজন অনুযায়ী পরিবর্তন করতে পারেন)
     const FEE_APPLICANT = 1000;
     const FEE_SPOUSE = 800;
     const FEE_CHILD = 500;
 
-    // স্বামী/স্ত্রীর ইনপুট ফিল্ড দেখানো বা লুকানো
+    const DEFAULT_SETTINGS = {
+        bkashNumber: "01700000000",
+        paymentNote: "নিচের পার্সোনাল নম্বরে উল্লিখিত টাকা Send Money করে ট্রানজেকশন আইডি (TrxID) সংগ্রহ করুন:",
+        schools: [
+            "রংপুর জিলা স্কুল",
+            "সরকারি বালিকা উচ্চ বিদ্যালয়",
+            "ক্যান্টনমেন্ট পাবলিক স্কুল ও কলেজ",
+            "পুলিশ লাইন্স স্কুল অ্যান্ড কলেজ",
+            "অন্যান্য"
+        ],
+        bloodGroups: [
+            "A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-", "জানা নেই"
+        ],
+        tshirtSizes: [
+            "S (38)", "M (40)", "L (42)", "XL (44)", "XXL (46)"
+        ]
+    };
+
+    function populateSelect(selectId, list, placeholder) {
+        const selectEl = document.getElementById(selectId);
+        selectEl.innerHTML = `<option value="">${placeholder}</option>`;
+        list.forEach(item => {
+            const opt = document.createElement('option');
+            opt.value = item;
+            opt.textContent = item;
+            selectEl.appendChild(opt);
+        });
+    }
+
+    function loadAdminConfig() {
+        const saved = localStorage.getItem('reunion_admin_settings');
+        const config = saved ? JSON.parse(saved) : DEFAULT_SETTINGS;
+
+        populateSelect('school', config.schools || DEFAULT_SETTINGS.schools, '-- স্কুল নির্বাচন করুন --');
+        populateSelect('bloodGroup', config.bloodGroups || DEFAULT_SETTINGS.bloodGroups, 'নির্বাচন করুন');
+        populateSelect('tshirt', config.tshirtSizes || DEFAULT_SETTINGS.tshirtSizes, 'নির্বাচন করুন');
+
+        document.getElementById('dynamicBkashNumber').textContent = config.bkashNumber || DEFAULT_SETTINGS.bkashNumber;
+        document.getElementById('dynamicPaymentNote').textContent = config.paymentNote || DEFAULT_SETTINGS.paymentNote;
+    }
+
+    window.addEventListener('DOMContentLoaded', loadAdminConfig);
+
     function toggleSpouseField() {
         const isChecked = document.getElementById('hasSpouse').checked;
         const container = document.getElementById('spouseFieldContainer');
@@ -450,7 +456,6 @@
         }
     }
 
-    // ডাইনামিকভাবে সন্তান যোগ করার ফাংশন
     function addChildField() {
         const container = document.getElementById('childrenContainer');
         const row = document.createElement('div');
@@ -465,15 +470,11 @@
         container.appendChild(row);
     }
 
-    // নির্দিষ্ট সন্তানের রো মুছে ফেলার ফাংশন
     function removeChildField(buttonElement) {
         const row = buttonElement.closest('.child-row');
-        if (row) {
-            row.remove();
-        }
+        if (row) row.remove();
     }
 
-    // ধাপ ১ থেকে ধাপ ২-এ যাওয়া এবং ফি হিসাব করা
     function goToStep2() {
         const school = document.getElementById('school').value.trim();
         const name = document.getElementById('applicantName').value.trim();
@@ -484,9 +485,14 @@
         const spouseName = document.getElementById('spouseName').value.trim();
         const errorMsg = document.getElementById('step1Error');
 
-        // সাধারণ ভ্যালিডেশন
-        if (!school || !name || !mobile || !blood || !tshirt) {
-            errorMsg.textContent = "অনুগ্রহ করে স্কুল, নাম, মোবাইল, রক্তের গ্রুপ এবং টি-শার্ট সাইজ পূরণ করুন।";
+        if (!school || !name || !blood || !tshirt) {
+            errorMsg.textContent = "অনুগ্রহ করে স্কুল, নাম, রক্তের গ্রুপ এবং টি-শার্ট সাইজ পূরণ করুন।";
+            errorMsg.style.display = 'block';
+            return;
+        }
+
+        if (!/^\d{11}$/.test(mobile)) {
+            errorMsg.textContent = "মোবাইল নম্বরটি অবশ্যই ঠিক ১১ ডিজিটের হতে হবে (যেমন: 017XXXXXXXX)।";
             errorMsg.style.display = 'block';
             return;
         }
@@ -497,7 +503,6 @@
             return;
         }
 
-        // সন্তানদের ফিল্ড চেক করা
         const childRows = document.querySelectorAll('.child-row');
         for (let row of childRows) {
             const cName = row.querySelector('.child-name').value.trim();
@@ -511,7 +516,6 @@
 
         errorMsg.style.display = 'none';
 
-        // ফি হিসাব আপডেট
         let total = FEE_APPLICANT;
         let breakdownHTML = `<div class="summary-line"><span>আবেদনকারী (১ জন):</span><span>${FEE_APPLICANT} টাকা</span></div>`;
 
@@ -530,7 +534,6 @@
         document.getElementById('feeBreakdown').innerHTML = breakdownHTML;
         document.getElementById('totalAmountText').textContent = `${total} টাকা`;
 
-        // ধাপ পরিবর্তন
         document.getElementById('step1').classList.add('hidden');
         document.getElementById('step2').classList.remove('hidden');
         document.getElementById('badge1').classList.remove('active');
@@ -538,7 +541,6 @@
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    // ধাপ ২ থেকে ধাপ ১-এ ফিরে যাওয়া (তথ্য অটুট থাকবে)
     function goToStep1() {
         document.getElementById('step2').classList.add('hidden');
         document.getElementById('step1').classList.remove('hidden');
@@ -546,22 +548,48 @@
         document.getElementById('badge1').classList.add('active');
     }
 
-    // ফর্ম সাবমিট হ্যান্ডলার
-    document.getElementById('reunionForm').addEventListener('submit', function(e) {
+    // ভবিষ্যতে পেমেন্ট গেটওয়ে / Bangla QR API থেকে TrxID ভেরিফাই করার ফাংশন
+    async function verifyGatewayPayment(trxId, expectedAmount) {
+        // এখানে আপনার পেমেন্ট গেটওয়ে API বা Cloud Function কল যুক্ত হবে
+        // উদাহরণ: const res = await fetch(`https://your-gateway-api/verify?trxId=${trxId}`);
+        return { verified: true, gatewayTrxId: trxId };
+    }
+
+    document.getElementById('reunionForm').addEventListener('submit', async function(e) {
         e.preventDefault();
         
         const sender = document.getElementById('senderNumber').value.trim();
         const trxId = document.getElementById('trxId').value.trim().toUpperCase();
         const errorMsg = document.getElementById('step2Error');
+        const submitBtn = document.getElementById('submitBtn');
 
-        if (sender.length < 11 || trxId.length < 6) {
+        if (!/^\d{11}$/.test(sender)) {
+            errorMsg.textContent = "যে নম্বর থেকে টাকা পাঠিয়েছেন সেটি অবশ্যই ১১ ডিজিটের হতে হবে।";
+            errorMsg.style.display = 'block';
+            return;
+        }
+
+        if (trxId.length < 6) {
+            errorMsg.textContent = "অনুগ্রহ করে সঠিক ট্রানজেকশন আইডি (TrxID) দিন।";
             errorMsg.style.display = 'block';
             return;
         }
 
         errorMsg.style.display = 'none';
+        submitBtn.disabled = true;
+        submitBtn.textContent = "যাচাই করা হচ্ছে...";
 
-        // সংগৃহীত ডেটা অবজেক্ট (পরবর্তীতে Firebase বা Google Sheet-এ পাঠানোর জন্য প্রস্তুত)
+        const totalAmount = document.getElementById('totalAmountText').textContent;
+        const paymentCheck = await verifyGatewayPayment(trxId, totalAmount);
+
+        if (!paymentCheck.verified) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = "রেজিস্ট্রেশন সম্পন্ন করুন";
+            errorMsg.textContent = "ট্রানজেকশন আইডিটি সঠিক নয় বা পেমেন্ট পাওয়া যায়নি।";
+            errorMsg.style.display = 'block';
+            return;
+        }
+
         const children = [];
         document.querySelectorAll('.child-row').forEach(row => {
             children.push({
@@ -578,14 +606,13 @@
             tshirt: document.getElementById('tshirt').value,
             spouse: document.getElementById('hasSpouse').checked ? document.getElementById('spouseName').value.trim() : null,
             children: children,
-            totalAmount: document.getElementById('totalAmountText').textContent,
+            totalAmount: totalAmount,
             bkashSender: sender,
             trxId: trxId
         };
 
         console.log("Submitted Data:", registrationData);
 
-        // কনফার্মেশন স্ক্রিন দেখানো
         document.getElementById('reunionForm').classList.add('hidden');
         document.getElementById('stepIndicator').classList.add('hidden');
         document.getElementById('successScreen').classList.remove('hidden');
