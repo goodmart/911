@@ -14,6 +14,7 @@
             --border: #cbd5e1;
             --danger: #ef4444;
             --edit: #f59e0b;
+            --save: #16a34a;
         }
 
         * {
@@ -30,7 +31,7 @@
         }
 
         .container {
-            max-width: 850px;
+            max-width: 900px;
             margin: 0 auto;
         }
 
@@ -65,6 +66,7 @@
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
             gap: 20px;
+            margin-bottom: 20px;
         }
 
         .card {
@@ -88,8 +90,21 @@
             margin-bottom: 16px;
         }
 
-        input[type="text"] {
-            flex: 1;
+        .form-group {
+            margin-bottom: 12px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        input[type="text"],
+        input[type="tel"],
+        textarea {
+            width: 100%;
             padding: 9px 12px;
             border: 1px solid var(--border);
             border-radius: 6px;
@@ -97,7 +112,7 @@
             outline: none;
         }
 
-        input[type="text"]:focus {
+        input:focus, textarea:focus {
             border-color: var(--primary);
         }
 
@@ -109,6 +124,7 @@
             border-radius: 6px;
             font-weight: 600;
             cursor: pointer;
+            flex-shrink: 0;
         }
 
         .btn-add:hover {
@@ -117,7 +133,7 @@
 
         ul {
             list-style: none;
-            max-height: 320px;
+            max-height: 260px;
             overflow-y: auto;
         }
 
@@ -125,7 +141,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 9px 10px;
+            padding: 8px 10px;
             border: 1px solid #e2e8f0;
             border-radius: 6px;
             margin-bottom: 8px;
@@ -158,19 +174,53 @@
         .btn-edit { background: var(--edit); }
         .btn-del { background: var(--danger); }
 
-        .reset-section {
-            margin-top: 24px;
-            text-align: right;
+        .footer-bar {
+            background: var(--card-bg);
+            padding: 18px 24px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .btn-save {
+            background: var(--save);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .btn-save:hover {
+            background: #15803d;
         }
 
         .btn-reset {
             background: #64748b;
             color: white;
             border: none;
-            padding: 8px 14px;
-            border-radius: 6px;
-            font-size: 13px;
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-size: 14px;
             cursor: pointer;
+        }
+
+        .status-toast {
+            display: none;
+            background: #dcfce7;
+            color: #166534;
+            border: 1px solid #86efac;
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            font-weight: 600;
+            text-align: center;
         }
     </style>
 </head>
@@ -178,17 +228,35 @@
 
 <div class="container">
     <div class="topbar">
-        <h1>অ্যাডমিন প্যানেল - ড্রপডাউন ম্যানেজমেন্ট</h1>
+        <h1>অ্যাডমিন প্যানেল - ঈদ পুনর্মিলনী ২০২৬</h1>
         <a href="index.html" target="_blank" class="btn-link">রেজিস্ট্রেশন ফর্ম দেখুন ↗</a>
     </div>
 
+    <div id="statusToast" class="status-toast"></div>
+
+    <!-- পেমেন্ট সেটিংস কার্ড -->
+    <div class="card" style="margin-bottom: 20px;">
+        <h2>পেমেন্ট ও বিকাশ সেটিংস</h2>
+        <div class="grid" style="margin-bottom: 0;">
+            <div class="form-group" style="margin-bottom: 0;">
+                <label for="bkashNumberInput">বিকাশ / পেমেন্ট নম্বর (১১ ডিজিট)</label>
+                <input type="tel" id="bkashNumberInput" maxlength="11" placeholder="01700000000" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+                <label for="paymentNoteInput">পেমেন্ট নির্দেশনা / গেটওয়ে নোট</label>
+                <input type="text" id="paymentNoteInput" placeholder="যেমন: পার্সোনাল নম্বরে Send Money করুন">
+            </div>
+        </div>
+    </div>
+
+    <!-- ড্রপডাউন ম্যানেজমেন্ট গ্রিড -->
     <div class="grid">
         <!-- স্কুলের তালিকা -->
         <div class="card">
             <h2>১. প্রতিষ্ঠান / স্কুলের নাম</h2>
             <div class="add-group">
-                <input type="text" id="schoolInput" placeholder="নতুন স্কুলের নাম লিখুন...">
-                <button class="btn-add" onclick="addItem('schools', 'schoolInput')">যোগ</button>
+                <input type="text" id="schoolInput" placeholder="নতুন স্কুলের নাম...">
+                <button type="button" class="btn-add" onclick="addItem('schools', 'schoolInput')">যোগ</button>
             </div>
             <ul id="schoolsList"></ul>
         </div>
@@ -198,7 +266,7 @@
             <h2>২. রক্তের গ্রুপ</h2>
             <div class="add-group">
                 <input type="text" id="bloodInput" placeholder="যেমন: O+ বা জানা নেই">
-                <button class="btn-add" onclick="addItem('bloodGroups', 'bloodInput')">যোগ</button>
+                <button type="button" class="btn-add" onclick="addItem('bloodGroups', 'bloodInput')">যোগ</button>
             </div>
             <ul id="bloodGroupsList"></ul>
         </div>
@@ -208,20 +276,23 @@
             <h2>৩. টি-শার্ট সাইজ</h2>
             <div class="add-group">
                 <input type="text" id="tshirtInput" placeholder="যেমন: XL (44)">
-                <button class="btn-add" onclick="addItem('tshirtSizes', 'tshirtInput')">যোগ</button>
+                <button type="button" class="btn-add" onclick="addItem('tshirtSizes', 'tshirtInput')">যোগ</button>
             </div>
             <ul id="tshirtSizesList"></ul>
         </div>
     </div>
 
-    <div class="reset-section">
-        <button class="btn-reset" onclick="resetDefaults()">ডিফল্ট তালিকায় ফিরে যান (Reset)</button>
+    <!-- সেভ ও রিসেট বাটন বার -->
+    <div class="footer-bar">
+        <button type="button" class="btn-reset" onclick="resetDefaults()">ডিফল্ট রিসেট করুন</button>
+        <button type="button" class="btn-save" onclick="saveAllSettings()">✓ Save Changes (সব তথ্য সেভ করুন)</button>
     </div>
 </div>
 
 <script>
-    // ডিফল্ট ডেটা
-    const DEFAULT_DATA = {
+    const DEFAULT_SETTINGS = {
+        bkashNumber: "01700000000",
+        paymentNote: "নিচের পার্সোনাল নম্বরে উল্লিখিত টাকা Send Money করে ট্রানজেকশন আইডি (TrxID) সংগ্রহ করুন:",
         schools: [
             "রংপুর জিলা স্কুল",
             "সরকারি বালিকা উচ্চ বিদ্যালয়",
@@ -237,24 +308,31 @@
         ]
     };
 
-    // লোকাল স্টোরেজ থেকে ডেটা লোড বা ইনিশিয়ালাইজ করা
-    function getData(key) {
-        const stored = localStorage.getItem('reunion_' + key);
-        if (!stored) {
-            localStorage.setItem('reunion_' + key, JSON.stringify(DEFAULT_DATA[key]));
-            return [...DEFAULT_DATA[key]];
+    // লোকাল মেমোরি ভেরিয়েবল (সেভ বাটনে ক্লিক করার আগ পর্যন্ত পরিবর্তনগুলো এখানে থাকবে)
+    let currentSettings = {};
+
+    function loadSettingsToMemory() {
+        const saved = localStorage.getItem('reunion_admin_settings');
+        if (saved) {
+            currentSettings = JSON.parse(saved);
+        } else {
+            currentSettings = JSON.parse(JSON.stringify(DEFAULT_SETTINGS));
+            localStorage.setItem('reunion_admin_settings', JSON.stringify(currentSettings));
         }
-        return JSON.parse(stored);
+
+        document.getElementById('bkashNumberInput').value = currentSettings.bkashNumber || "";
+        document.getElementById('paymentNoteInput').value = currentSettings.paymentNote || "";
+        renderAllLists();
     }
 
-    function saveData(key, list) {
-        localStorage.setItem('reunion_' + key, JSON.stringify(list));
-        renderList(key);
+    function renderAllLists() {
+        renderList('schools');
+        renderList('bloodGroups');
+        renderList('tshirtSizes');
     }
 
-    // তালিকা স্ক্রিনে দেখানো
     function renderList(key) {
-        const list = getData(key);
+        const list = currentSettings[key] || [];
         const ul = document.getElementById(key + 'List');
         ul.innerHTML = '';
 
@@ -263,68 +341,85 @@
             li.innerHTML = `
                 <span>${item}</span>
                 <div class="actions">
-                    <button class="btn-edit" onclick="editItem('${key}', ${index})">এডিট</button>
-                    <button class="btn-del" onclick="deleteItem('${key}', ${index})">ডিলিট</button>
+                    <button type="button" class="btn-edit" onclick="editItem('${key}', ${index})">এডিট</button>
+                    <button type="button" class="btn-del" onclick="deleteItem('${key}', ${index})">ডিলিট</button>
                 </div>
             `;
             ul.appendChild(li);
         });
     }
 
-    // নতুন আইটেম যোগ করা
     function addItem(key, inputId) {
         const input = document.getElementById(inputId);
         const val = input.value.trim();
         if (!val) return alert("অনুগ্রহ করে কিছু লিখুন!");
 
-        const list = getData(key);
-        if (list.includes(val)) {
+        if (currentSettings[key].includes(val)) {
             return alert("এই নামটি ইতিমধ্যেই তালিকায় আছে!");
         }
 
-        list.push(val);
-        saveData(key, list);
+        currentSettings[key].push(val);
+        renderList(key);
         input.value = '';
+        showToast("তালিকায় যুক্ত হয়েছে। চূড়ান্ত করতে নিচের 'Save Changes' বাটনে ক্লিক করুন।", "#fef3c7", "#92400e");
     }
 
-    // আইটেম এডিট করা
     function editItem(key, index) {
-        const list = getData(key);
-        const currentVal = list[index];
+        const currentVal = currentSettings[key][index];
         const newVal = prompt("নতুন নাম লিখুন:", currentVal);
 
         if (newVal !== null && newVal.trim() !== "") {
-            list[index] = newVal.trim();
-            saveData(key, list);
+            currentSettings[key][index] = newVal.trim();
+            renderList(key);
+            showToast("পরিবর্তন করা হয়েছে। চূড়ান্ত করতে 'Save Changes' বাটনে ক্লিক করুন।", "#fef3c7", "#92400e");
         }
     }
 
-    // আইটেম ডিলিট করা
     function deleteItem(key, index) {
-        const list = getData(key);
-        if (confirm(`আপনি কি নিশ্চিতভাবে "${list[index]}" মুছে ফেলতে চান?`)) {
-            list.splice(index, 1);
-            saveData(key, list);
+        if (confirm(`আপনি কি নিশ্চিতভাবে "${currentSettings[key][index]}" মুছে ফেলতে চান?`)) {
+            currentSettings[key].splice(index, 1);
+            renderList(key);
+            showToast("মুছে ফেলা হয়েছে। চূড়ান্ত করতে 'Save Changes' বাটনে ক্লিক করুন।", "#fef3c7", "#92400e");
         }
     }
 
-    // ডিফল্ট রিসেট
+    // চূড়ান্ত সেভ ফাংশন (ভবিষ্যতে এখানেই Firebase setDoc/updateDoc কোড বসবে)
+    function saveAllSettings() {
+        const bkash = document.getElementById('bkashNumberInput').value.trim();
+        const note = document.getElementById('paymentNoteInput').value.trim();
+
+        if (bkash && !/^\d{11}$/.test(bkash)) {
+            return alert("বিকাশ নম্বরটি অবশ্যই ঠিক ১১ ডিজিটের হতে হবে!");
+        }
+
+        currentSettings.bkashNumber = bkash;
+        currentSettings.paymentNote = note;
+
+        // ব্রাউজার লোকাল স্টোরেজে সেভ করা
+        localStorage.setItem('reunion_admin_settings', JSON.stringify(currentSettings));
+
+        showToast("✓ সব তথ্য সফলভাবে সেভ হয়েছে! এখন রেজিস্ট্রেশন ফর্ম রিলোড দিলে নতুন তথ্য দেখা যাবে।", "#dcfce7", "#166534");
+    }
+
     function resetDefaults() {
-        if (confirm("সব তালিকা কি আগের ডিফল্ট অবস্থায় ফিরিয়ে নিতে চান?")) {
-            localStorage.setItem('reunion_schools', JSON.stringify(DEFAULT_DATA.schools));
-            localStorage.setItem('reunion_bloodGroups', JSON.stringify(DEFAULT_DATA.bloodGroups));
-            localStorage.setItem('reunion_tshirtSizes', JSON.stringify(DEFAULT_DATA.tshirtSizes));
-            init();
+        if (confirm("সব তথ্য কি আগের ডিফল্ট অবস্থায় ফিরিয়ে নিতে চান?")) {
+            currentSettings = JSON.parse(JSON.stringify(DEFAULT_SETTINGS));
+            localStorage.setItem('reunion_admin_settings', JSON.stringify(currentSettings));
+            loadSettingsToMemory();
+            showToast("ডিফল্ট সেটিংস রিসেট ও সেভ করা হয়েছে।", "#dcfce7", "#166534");
         }
     }
 
-    function init() {
-        renderList('schools');
-        renderList('bloodGroups');
-        renderList('tshirtSizes');
+    function showToast(msg, bg, color) {
+        const toast = document.getElementById('statusToast');
+        toast.textContent = msg;
+        toast.style.background = bg;
+        toast.style.color = color;
+        toast.style.display = 'block';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    init();
+    loadSettingsToMemory();
 </script>
 
 </body>
