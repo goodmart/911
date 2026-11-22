@@ -31,8 +31,35 @@
         }
 
         .container {
-            max-width: 900px;
+            max-width: 960px;
             margin: 0 auto;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Login Gate */
+        .login-wrapper {
+            max-width: 400px;
+            margin: 60px auto;
+            background: var(--card-bg);
+            padding: 28px 24px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            text-align: center;
+        }
+
+        .login-wrapper h2 {
+            color: var(--primary);
+            margin-bottom: 8px;
+            font-size: 21px;
+        }
+
+        .login-wrapper p {
+            font-size: 13px;
+            color: #64748b;
+            margin-bottom: 18px;
         }
 
         .topbar {
@@ -52,6 +79,13 @@
             font-size: 20px;
         }
 
+        .topbar-actions {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
         .btn-link {
             background: #ffffff;
             color: var(--primary);
@@ -60,6 +94,17 @@
             border-radius: 6px;
             font-weight: 600;
             font-size: 14px;
+        }
+
+        .btn-logout {
+            background: rgba(255, 255, 255, 0.18);
+            color: #ffffff;
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 13px;
+            cursor: pointer;
         }
 
         .grid {
@@ -92,6 +137,7 @@
 
         .form-group {
             margin-bottom: 12px;
+            text-align: left;
         }
 
         .form-group label {
@@ -103,6 +149,8 @@
 
         input[type="text"],
         input[type="tel"],
+        input[type="number"],
+        input[type="password"],
         textarea {
             width: 100%;
             padding: 9px 12px;
@@ -155,13 +203,19 @@
             flex: 1;
         }
 
+        li input.inline-edit-input {
+            flex: 1;
+            padding: 5px 8px;
+            font-size: 13px;
+        }
+
         .actions {
             display: flex;
             gap: 5px;
             flex-shrink: 0;
         }
 
-        .btn-edit, .btn-del {
+        .btn-edit, .btn-del, .btn-inline-save, .btn-inline-cancel {
             border: none;
             padding: 5px 8px;
             border-radius: 4px;
@@ -173,6 +227,8 @@
 
         .btn-edit { background: var(--edit); }
         .btn-del { background: var(--danger); }
+        .btn-inline-save { background: var(--save); }
+        .btn-inline-cancel { background: #64748b; }
 
         .footer-bar {
             background: var(--card-bg);
@@ -184,6 +240,7 @@
             align-items: center;
             flex-wrap: wrap;
             gap: 12px;
+            margin-bottom: 20px;
         }
 
         .btn-save {
@@ -222,29 +279,112 @@
             font-weight: 600;
             text-align: center;
         }
+
+        /* Registrations Table */
+        .table-wrap {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        th, td {
+            border: 1px solid #e2e8f0;
+            padding: 8px 10px;
+            text-align: left;
+        }
+
+        th {
+            background: #f8fafc;
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .badge-count {
+            background: #e0f2fe;
+            color: #0369a1;
+            padding: 2px 8px;
+            border-radius: 999px;
+            font-size: 12px;
+            margin-left: 6px;
+        }
+
+        .pin-note {
+            font-size: 12px;
+            color: #64748b;
+            margin-top: 4px;
+        }
     </style>
 </head>
 <body>
 
-<div class="container">
+<!-- অ্যাডমিন পিন লগইন স্ক্রিন -->
+<div id="loginScreen" class="login-wrapper">
+    <h2>অ্যাডমিন লগইন</h2>
+    <p>ঈদ পুনর্মিলনী ২০২৬ অ্যাডমিন প্যানেলে প্রবেশ করতে পিন দিন</p>
+    <form id="loginForm">
+        <div class="form-group">
+            <label for="adminPinInput">অ্যাডমিন পিন</label>
+            <input type="password" id="adminPinInput" placeholder="পিন লিখুন (ডিফল্ট: 2026)" required>
+        </div>
+        <button type="submit" class="btn-save" style="width: 100%; font-size: 15px; padding: 10px;">প্রবেশ করুন</button>
+    </form>
+</div>
+
+<!-- মূল অ্যাডমিন প্যানেল -->
+<div id="adminDashboard" class="container hidden">
     <div class="topbar">
         <h1>অ্যাডমিন প্যানেল - ঈদ পুনর্মিলনী ২০২৬</h1>
-        <a href="index.html" target="_blank" class="btn-link">রেজিস্ট্রেশন ফর্ম দেখুন ↗</a>
+        <div class="topbar-actions">
+            <a href="index.html" target="_blank" class="btn-link">রেজিস্ট্রেশন ফর্ম দেখুন ↗</a>
+            <button type="button" class="btn-logout" onclick="logoutAdmin()">লগআউট</button>
+        </div>
     </div>
 
     <div id="statusToast" class="status-toast"></div>
 
-    <!-- পেমেন্ট সেটিংস কার্ড -->
+    <!-- পেমেন্ট ও নিরাপত্তা সেটিংস কার্ড -->
     <div class="card" style="margin-bottom: 20px;">
-        <h2>পেমেন্ট ও বিকাশ সেটিংস</h2>
+        <h2>পেমেন্ট ও অ্যাডমিন পিন সেটিংস</h2>
         <div class="grid" style="margin-bottom: 0;">
             <div class="form-group" style="margin-bottom: 0;">
-                <label for="bkashNumberInput">বিকাশ / পেমেন্ট নম্বর (১১ ডিজিট)</label>
+                <label for="bkashNumberInput">বিকাশ / পেমেন্ট নম্বর (১১ ডিজিট) *</label>
                 <input type="tel" id="bkashNumberInput" maxlength="11" placeholder="01700000000" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
             </div>
             <div class="form-group" style="margin-bottom: 0;">
-                <label for="paymentNoteInput">পেমেন্ট নির্দেশনা / গেটওয়ে নোট</label>
+                <label for="paymentNoteInput">পেমেন্ট নির্দেশনা / গেটওয়ে নোট *</label>
                 <input type="text" id="paymentNoteInput" placeholder="যেমন: পার্সোনাল নম্বরে Send Money করুন">
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+                <label for="newAdminPinInput">অ্যাডমিন পিন পরিবর্তন (কমপক্ষে ৪ অক্ষর)</label>
+                <input type="text" id="newAdminPinInput" maxlength="12" placeholder="2026">
+                <div class="pin-note">ডিফল্ট পিন: 2026 (পরিবর্তন করে সেভ করতে পারেন)</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- রেজিস্ট্রেশন ফি সেটিংস কার্ড -->
+    <div class="card" style="margin-bottom: 20px;">
+        <h2>রেজিস্ট্রেশন ফি নির্ধারণ (টাকা)</h2>
+        <div class="grid" style="margin-bottom: 0;">
+            <div class="form-group" style="margin-bottom: 0;">
+                <label for="feeApplicantInput">আবেদনকারী ফি (টাকা) *</label>
+                <input type="number" id="feeApplicantInput" min="0" step="10">
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+                <label for="feeSpouseInput">স্বামী / স্ত্রী ফি (টাকা) *</label>
+                <input type="number" id="feeSpouseInput" min="0" step="10">
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+                <label for="feeChildInput">সন্তান প্রতি ফি (টাকা) *</label>
+                <input type="number" id="feeChildInput" min="0" step="10">
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+                <label for="freeChildMaxAgeInput">ফ্রি সন্তানের সর্বোচ্চ বয়স (বছর)</label>
+                <input type="number" id="freeChildMaxAgeInput" min="0" max="15" placeholder="যেমন: 5 (৫ বছর বা কম ফ্রি)">
             </div>
         </div>
     </div>
@@ -287,12 +427,51 @@
         <button type="button" class="btn-reset" onclick="resetDefaults()">ডিফল্ট রিসেট করুন</button>
         <button type="button" class="btn-save" onclick="saveAllSettings()">✓ Save Changes (সব তথ্য সেভ করুন)</button>
     </div>
+
+    <!-- জমা হওয়া রেজিস্ট্রেশন তালিকা -->
+    <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+            <h2 style="margin-bottom: 0; border-bottom: none; padding-bottom: 0;">
+                জমা হওয়া রেজিস্ট্রেশন সমূহ <span id="regCountBadge" class="badge-count">0</span>
+            </h2>
+            <button type="button" class="btn-add" onclick="exportRegistrationsCSV()">CSV ডাউনলোড করুন</button>
+        </div>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>নাম</th>
+                        <th>মোবাইল</th>
+                        <th>স্কুল</th>
+                        <th>রক্ত / টি-শার্ট</th>
+                        <th>পরিবার</th>
+                        <th>মোট ফি</th>
+                        <th>TrxID (প্রেরক)</th>
+                    </tr>
+                </thead>
+                <tbody id="registrationsTableBody">
+                    <tr><td colspan="7" style="text-align: center; color: #64748b;">এখনো কোনো রেজিস্ট্রেশন জমা হয়নি।</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
 
 <script>
+    const SETTINGS_KEY = 'reunion_admin_settings';
+    const REGISTRATIONS_KEY = 'reunion_registrations_list';
+    const AUTH_SESSION_KEY = 'reunion_admin_authenticated';
+
     const DEFAULT_SETTINGS = {
+        adminPin: "2026",
         bkashNumber: "01700000000",
         paymentNote: "নিচের পার্সোনাল নম্বরে উল্লিখিত টাকা Send Money করে ট্রানজেকশন আইডি (TrxID) সংগ্রহ করুন:",
+        fees: {
+            applicant: 1000,
+            spouse: 800,
+            child: 500,
+            freeChildMaxAge: 5
+        },
         schools: [
             "রংপুর জিলা স্কুল",
             "সরকারি বালিকা উচ্চ বিদ্যালয়",
@@ -308,20 +487,80 @@
         ]
     };
 
-    // লোকাল মেমোরি ভেরিয়েবল (সেভ বাটনে ক্লিক করার আগ পর্যন্ত পরিবর্তনগুলো এখানে থাকবে)
     let currentSettings = {};
+    let editingState = { key: null, index: null };
+
+    function getSafeSettings() {
+        try {
+            const saved = localStorage.getItem(SETTINGS_KEY);
+            if (!saved) return JSON.parse(JSON.stringify(DEFAULT_SETTINGS));
+            const parsed = JSON.parse(saved);
+            return {
+                ...JSON.parse(JSON.stringify(DEFAULT_SETTINGS)),
+                ...parsed,
+                fees: {
+                    ...DEFAULT_SETTINGS.fees,
+                    ...(parsed.fees || {})
+                }
+            };
+        } catch (err) {
+            console.error("Settings parse error, falling back to defaults:", err);
+            return JSON.parse(JSON.stringify(DEFAULT_SETTINGS));
+        }
+    }
+
+    function getSafeRegistrations() {
+        try {
+            const raw = localStorage.getItem(REGISTRATIONS_KEY);
+            const list = raw ? JSON.parse(raw) : [];
+            return Array.isArray(list) ? list : [];
+        } catch (err) {
+            return [];
+        }
+    }
+
+    // Login Handling
+    document.getElementById('loginForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const enteredPin = document.getElementById('adminPinInput').value.trim();
+        const settings = getSafeSettings();
+        if (enteredPin === String(settings.adminPin || "2026")) {
+            sessionStorage.setItem(AUTH_SESSION_KEY, 'true');
+            unlockDashboard();
+        } else {
+            alert("ভুল পিন! অনুগ্রহ করে সঠিক পিন দিন।");
+        }
+    });
+
+    function unlockDashboard() {
+        document.getElementById('loginScreen').classList.add('hidden');
+        document.getElementById('adminDashboard').classList.remove('hidden');
+        loadSettingsToMemory();
+        renderRegistrationsTable();
+    }
+
+    function logoutAdmin() {
+        sessionStorage.removeItem(AUTH_SESSION_KEY);
+        document.getElementById('adminDashboard').classList.add('hidden');
+        document.getElementById('loginScreen').classList.remove('hidden');
+        document.getElementById('adminPinInput').value = '';
+    }
 
     function loadSettingsToMemory() {
-        const saved = localStorage.getItem('reunion_admin_settings');
-        if (saved) {
-            currentSettings = JSON.parse(saved);
-        } else {
-            currentSettings = JSON.parse(JSON.stringify(DEFAULT_SETTINGS));
-            localStorage.setItem('reunion_admin_settings', JSON.stringify(currentSettings));
+        currentSettings = getSafeSettings();
+        if (!localStorage.getItem(SETTINGS_KEY)) {
+            localStorage.setItem(SETTINGS_KEY, JSON.stringify(currentSettings));
         }
 
         document.getElementById('bkashNumberInput').value = currentSettings.bkashNumber || "";
         document.getElementById('paymentNoteInput').value = currentSettings.paymentNote || "";
+        document.getElementById('newAdminPinInput').value = currentSettings.adminPin || "2026";
+
+        document.getElementById('feeApplicantInput').value = currentSettings.fees.applicant;
+        document.getElementById('feeSpouseInput').value = currentSettings.fees.spouse;
+        document.getElementById('feeChildInput').value = currentSettings.fees.child;
+        document.getElementById('freeChildMaxAgeInput').value = currentSettings.fees.freeChildMaxAge;
+
         renderAllLists();
     }
 
@@ -338,13 +577,61 @@
 
         list.forEach((item, index) => {
             const li = document.createElement('li');
-            li.innerHTML = `
-                <span>${item}</span>
-                <div class="actions">
-                    <button type="button" class="btn-edit" onclick="editItem('${key}', ${index})">এডিট</button>
-                    <button type="button" class="btn-del" onclick="deleteItem('${key}', ${index})">ডিলিট</button>
-                </div>
-            `;
+
+            if (editingState.key === key && editingState.index === index) {
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.className = 'inline-edit-input';
+                input.value = item;
+                input.id = `editInput_${key}_${index}`;
+
+                const actions = document.createElement('div');
+                actions.className = 'actions';
+
+                const saveBtn = document.createElement('button');
+                saveBtn.type = 'button';
+                saveBtn.className = 'btn-inline-save';
+                saveBtn.textContent = 'ঠিক আছে';
+                saveBtn.onclick = () => confirmInlineEdit(key, index, input.value);
+
+                const cancelBtn = document.createElement('button');
+                cancelBtn.type = 'button';
+                cancelBtn.className = 'btn-inline-cancel';
+                cancelBtn.textContent = 'বাতিল';
+                cancelBtn.onclick = () => {
+                    editingState = { key: null, index: null };
+                    renderList(key);
+                };
+
+                actions.appendChild(saveBtn);
+                actions.appendChild(cancelBtn);
+                li.appendChild(input);
+                li.appendChild(actions);
+            } else {
+                const span = document.createElement('span');
+                span.textContent = item; // XSS-safe textContent
+
+                const actions = document.createElement('div');
+                actions.className = 'actions';
+
+                const editBtn = document.createElement('button');
+                editBtn.type = 'button';
+                editBtn.className = 'btn-edit';
+                editBtn.textContent = 'এডিট';
+                editBtn.onclick = () => startInlineEdit(key, index);
+
+                const delBtn = document.createElement('button');
+                delBtn.type = 'button';
+                delBtn.className = 'btn-del';
+                delBtn.textContent = 'ডিলিট';
+                delBtn.onclick = () => deleteItem(key, index);
+
+                actions.appendChild(editBtn);
+                actions.appendChild(delBtn);
+                li.appendChild(span);
+                li.appendChild(actions);
+            }
+
             ul.appendChild(li);
         });
     }
@@ -352,10 +639,11 @@
     function addItem(key, inputId) {
         const input = document.getElementById(inputId);
         const val = input.value.trim();
-        if (!val) return alert("অনুগ্রহ করে কিছু লিখুন!");
+        if (!val) return showToast("অনুগ্রহ করে কিছু লিখুন!", "#fee2e2", "#991b1b");
 
-        if (currentSettings[key].includes(val)) {
-            return alert("এই নামটি ইতিমধ্যেই তালিকায় আছে!");
+        const exists = currentSettings[key].some(existing => existing.toLowerCase() === val.toLowerCase());
+        if (exists) {
+            return showToast("এই নামটি ইতিমধ্যেই তালিকায় আছে!", "#fee2e2", "#991b1b");
         }
 
         currentSettings[key].push(val);
@@ -364,47 +652,88 @@
         showToast("তালিকায় যুক্ত হয়েছে। চূড়ান্ত করতে নিচের 'Save Changes' বাটনে ক্লিক করুন।", "#fef3c7", "#92400e");
     }
 
-    function editItem(key, index) {
-        const currentVal = currentSettings[key][index];
-        const newVal = prompt("নতুন নাম লিখুন:", currentVal);
+    function startInlineEdit(key, index) {
+        editingState = { key, index };
+        renderAllLists();
+    }
 
-        if (newVal !== null && newVal.trim() !== "") {
-            currentSettings[key][index] = newVal.trim();
-            renderList(key);
-            showToast("পরিবর্তন করা হয়েছে। চূড়ান্ত করতে 'Save Changes' বাটনে ক্লিক করুন।", "#fef3c7", "#92400e");
+    function confirmInlineEdit(key, index, rawValue) {
+        const trimmed = rawValue.trim();
+        if (!trimmed) {
+            return showToast("নাম ফাঁকা রাখা যাবে না!", "#fee2e2", "#991b1b");
         }
+        const duplicate = currentSettings[key].some((v, idx) => idx !== index && v.toLowerCase() === trimmed.toLowerCase());
+        if (duplicate) {
+            return showToast("এই নামটি ইতিমধ্যেই তালিকায় আছে!", "#fee2e2", "#991b1b");
+        }
+        currentSettings[key][index] = trimmed;
+        editingState = { key: null, index: null };
+        renderList(key);
+        showToast("পরিবর্তন করা হয়েছে। চূড়ান্ত করতে 'Save Changes' বাটনে ক্লিক করুন।", "#fef3c7", "#92400e");
     }
 
     function deleteItem(key, index) {
+        if (currentSettings[key].length <= 1) {
+            return showToast("তালিকায় অন্তত ১টি অপশন থাকতে হবে!", "#fee2e2", "#991b1b");
+        }
         if (confirm(`আপনি কি নিশ্চিতভাবে "${currentSettings[key][index]}" মুছে ফেলতে চান?`)) {
             currentSettings[key].splice(index, 1);
+            editingState = { key: null, index: null };
             renderList(key);
             showToast("মুছে ফেলা হয়েছে। চূড়ান্ত করতে 'Save Changes' বাটনে ক্লিক করুন।", "#fef3c7", "#92400e");
         }
     }
 
-    // চূড়ান্ত সেভ ফাংশন (ভবিষ্যতে এখানেই Firebase setDoc/updateDoc কোড বসবে)
     function saveAllSettings() {
         const bkash = document.getElementById('bkashNumberInput').value.trim();
         const note = document.getElementById('paymentNoteInput').value.trim();
+        const newPin = document.getElementById('newAdminPinInput').value.trim();
 
-        if (bkash && !/^\d{11}$/.test(bkash)) {
-            return alert("বিকাশ নম্বরটি অবশ্যই ঠিক ১১ ডিজিটের হতে হবে!");
+        const feeApplicant = Number(document.getElementById('feeApplicantInput').value);
+        const feeSpouse = Number(document.getElementById('feeSpouseInput').value);
+        const feeChild = Number(document.getElementById('feeChildInput').value);
+        const freeChildMaxAge = Number(document.getElementById('freeChildMaxAgeInput').value);
+
+        // বাধ্যতামূলক ১১ ডিজিটের বাংলাদেশি মোবাইল নম্বর যাচাই
+        if (!/^01[3-9]\d{8}$/.test(bkash)) {
+            return showToast("সঠিক ১১ ডিজিটের বিকাশ/মোবাইল নম্বর দিন (যেমন: 017XXXXXXXX)!", "#fee2e2", "#991b1b");
+        }
+
+        if (!note) {
+            return showToast("পেমেন্ট নির্দেশনা ঘরটি ফাঁকা রাখা যাবে না!", "#fee2e2", "#991b1b");
+        }
+
+        if (newPin.length < 4) {
+            return showToast("অ্যাডমিন পিন কমপক্ষে ৪ অক্ষরের হতে হবে!", "#fee2e2", "#991b1b");
+        }
+
+        if (isNaN(feeApplicant) || feeApplicant < 0 || isNaN(feeSpouse) || feeSpouse < 0 || isNaN(feeChild) || feeChild < 0) {
+            return showToast("সঠিক ফি পরিমাণ (০ বা তার বেশি) লিখুন!", "#fee2e2", "#991b1b");
+        }
+
+        if (isNaN(freeChildMaxAge) || freeChildMaxAge < 0 || freeChildMaxAge > 15) {
+            return showToast("ফ্রি সন্তানের বয়স ০ থেকে ১৫ বছরের মধ্যে হতে হবে!", "#fee2e2", "#991b1b");
         }
 
         currentSettings.bkashNumber = bkash;
         currentSettings.paymentNote = note;
+        currentSettings.adminPin = newPin;
+        currentSettings.fees = {
+            applicant: feeApplicant,
+            spouse: feeSpouse,
+            child: feeChild,
+            freeChildMaxAge: freeChildMaxAge
+        };
 
-        // ব্রাউজার লোকাল স্টোরেজে সেভ করা
-        localStorage.setItem('reunion_admin_settings', JSON.stringify(currentSettings));
-
-        showToast("✓ সব তথ্য সফলভাবে সেভ হয়েছে! এখন রেজিস্ট্রেশন ফর্ম রিলোড দিলে নতুন তথ্য দেখা যাবে।", "#dcfce7", "#166534");
+        localStorage.setItem(SETTINGS_KEY, JSON.stringify(currentSettings));
+        showToast("✓ সব তথ্য সফলভাবে সেভ হয়েছে! খোলা থাকা রেজিস্ট্রেশন ফর্মেও স্বয়ংক্রিয়ভাবে আপডেট হয়ে যাবে।", "#dcfce7", "#166534");
     }
 
     function resetDefaults() {
         if (confirm("সব তথ্য কি আগের ডিফল্ট অবস্থায় ফিরিয়ে নিতে চান?")) {
             currentSettings = JSON.parse(JSON.stringify(DEFAULT_SETTINGS));
-            localStorage.setItem('reunion_admin_settings', JSON.stringify(currentSettings));
+            localStorage.setItem(SETTINGS_KEY, JSON.stringify(currentSettings));
+            editingState = { key: null, index: null };
             loadSettingsToMemory();
             showToast("ডিফল্ট সেটিংস রিসেট ও সেভ করা হয়েছে।", "#dcfce7", "#166534");
         }
@@ -415,11 +744,103 @@
         toast.textContent = msg;
         toast.style.background = bg;
         toast.style.color = color;
+        toast.style.borderColor = color;
         toast.style.display = 'block';
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    loadSettingsToMemory();
+    function renderRegistrationsTable() {
+        const list = getSafeRegistrations();
+        const tbody = document.getElementById('registrationsTableBody');
+        document.getElementById('regCountBadge').textContent = list.length;
+        tbody.innerHTML = '';
+
+        if (list.length === 0) {
+            const tr = document.createElement('tr');
+            const td = document.createElement('td');
+            td.colSpan = 7;
+            td.style.textAlign = 'center';
+            td.style.color = '#64748b';
+            td.textContent = 'এখনো কোনো রেজিস্ট্রেশন জমা হয়নি।';
+            tr.appendChild(td);
+            tbody.appendChild(tr);
+            return;
+        }
+
+        list.slice().reverse().forEach(reg => {
+            const tr = document.createElement('tr');
+            const familyParts = [];
+            if (reg.spouse) familyParts.push(`স্বামী/স্ত্রী: ${reg.spouse}`);
+            if (Array.isArray(reg.children) && reg.children.length > 0) {
+                const cText = reg.children.map(c => `${c.name} (${c.age}ব)`).join(', ');
+                familyParts.push(`সন্তান: ${cText}`);
+            }
+
+            const cells = [
+                reg.applicantName || '-',
+                reg.mobile || '-',
+                reg.school || '-',
+                `${reg.bloodGroup || '-'} / ${reg.tshirt || '-'}`,
+                familyParts.length ? familyParts.join(' | ') : 'শুধু আবেদনকারী',
+                `${reg.totalAmount || 0} টাকা`,
+                `${reg.trxId || '-'} (${reg.bkashSender || '-'})`
+            ];
+
+            cells.forEach(text => {
+                const td = document.createElement('td');
+                td.textContent = text;
+                tr.appendChild(td);
+            });
+
+            tbody.appendChild(tr);
+        });
+    }
+
+    function exportRegistrationsCSV() {
+        const list = getSafeRegistrations();
+        if (list.length === 0) {
+            return showToast("ডাউনলোড করার মতো কোনো রেজিস্ট্রেশন তথ্য নেই।", "#fef3c7", "#92400e");
+        }
+
+        const headers = ["Name", "Mobile", "School", "BloodGroup", "TShirt", "Spouse", "Children", "TotalAmount", "SenderNumber", "TrxID", "SubmittedAt"];
+        const escapeCSV = (val) => `"${String(val ?? '').replace(/"/g, '""')}"`;
+
+        const rows = list.map(r => [
+            r.applicantName,
+            r.mobile,
+            r.school,
+            r.bloodGroup,
+            r.tshirt,
+            r.spouse || '',
+            (r.children || []).map(c => `${c.name} (${c.age}y)`).join('; '),
+            r.totalAmount,
+            r.bkashSender,
+            r.trxId,
+            r.submittedAt || ''
+        ].map(escapeCSV).join(','));
+
+        const csvContent = "﻿" + [headers.join(','), ...rows].join('
+');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'eid_reunion_2026_registrations.csv';
+        a.click();
+        URL.revokeObjectURL(url);
+    }
+
+    // অন্য ট্যাবে নতুন রেজিস্ট্রেশন জমা হলে লাইভ আপডেট
+    window.addEventListener('storage', function(e) {
+        if (e.key === REGISTRATIONS_KEY && sessionStorage.getItem(AUTH_SESSION_KEY) === 'true') {
+            renderRegistrationsTable();
+        }
+    });
+
+    // সেশন চেক
+    if (sessionStorage.getItem(AUTH_SESSION_KEY) === 'true') {
+        unlockDashboard();
+    }
 </script>
 
 </body>

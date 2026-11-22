@@ -35,7 +35,7 @@
         .container {
             background: var(--card-bg);
             width: 100%;
-            max-width: 550px;
+            max-width: 560px;
             border-radius: 12px;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
             padding: 24px;
@@ -259,7 +259,30 @@
             margin-bottom: 16px;
             font-size: 14px;
             color: #9d174d;
-            line-height: 1.5;
+            line-height: 1.6;
+        }
+
+        .bkash-number-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 6px;
+            flex-wrap: wrap;
+        }
+
+        .btn-copy {
+            background: #be185d;
+            color: #ffffff;
+            border: none;
+            padding: 4px 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .btn-copy:hover {
+            background: #9d174d;
         }
 
         .hidden {
@@ -276,12 +299,55 @@
 
         .success-box {
             text-align: center;
-            padding: 20px 10px;
+            padding: 16px 8px;
         }
 
         .success-box h2 {
             color: var(--primary);
             margin-bottom: 10px;
+        }
+
+        .receipt-card {
+            background: #f8fafc;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            padding: 16px;
+            margin: 16px 0;
+            text-align: left;
+            font-size: 14px;
+            line-height: 1.7;
+        }
+
+        .receipt-row {
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 1px dashed #e2e8f0;
+            padding: 4px 0;
+            gap: 10px;
+        }
+
+        .receipt-row:last-child {
+            border-bottom: none;
+        }
+
+        .hint-text {
+            font-size: 12px;
+            color: #64748b;
+            margin-top: 4px;
+        }
+
+        @media print {
+            body {
+                background: #ffffff;
+                padding: 0;
+            }
+            .container {
+                box-shadow: none;
+                max-width: 100%;
+            }
+            .no-print {
+                display: none !important;
+            }
         }
     </style>
 </head>
@@ -332,7 +398,7 @@
             <div class="family-box">
                 <label class="checkbox-label">
                     <input type="checkbox" id="hasSpouse" onchange="toggleSpouseField()">
-                    স্বামী / স্ত্রী সাথে আসবেন
+                    স্বামী / স্ত্রী সাথে আসবেন (<span id="spouseFeeLabel">৮০০</span> টাকা)
                 </label>
                 <div id="spouseFieldContainer" class="form-group hidden" style="margin-top: 10px; margin-bottom: 0;">
                     <label for="spouseName">স্বামী / স্ত্রীর নাম *</label>
@@ -343,6 +409,7 @@
             <!-- Dynamic Children Section -->
             <div class="family-box">
                 <label>সন্তানদের তথ্য (যদি সাথে আসে)</label>
+                <div id="childFeeHint" class="hint-text"></div>
                 <div id="childrenContainer"></div>
                 <button type="button" class="btn-add" onclick="addChildField()">+ সন্তান যোগ করুন</button>
             </div>
@@ -364,8 +431,11 @@
 
             <div class="bkash-info">
                 <strong>পেমেন্ট নির্দেশনা:</strong><br>
-                <span id="dynamicPaymentNote">নিচের পার্সোনাল নম্বরে উল্লিখিত টাকা Send Money করে ট্রানজেকশন আইডি (TrxID) সংগ্রহ করুন:</span><br>
-                <strong>বিকাশ / মার্চেন্ট নম্বর: <span id="dynamicBkashNumber">01700000000</span></strong>
+                <span id="dynamicPaymentNote">নিচের পার্সোনাল নম্বরে উল্লিখিত টাকা Send Money করে ট্রানজেকশন আইডি (TrxID) সংগ্রহ করুন:</span>
+                <div class="bkash-number-row">
+                    <strong>বিকাশ / মার্চেন্ট নম্বর: <span id="dynamicBkashNumber">01700000000</span></strong>
+                    <button type="button" class="btn-copy" id="copyNumberBtn" onclick="copyBkashNumber()">নম্বর কপি করুন</button>
+                </div>
             </div>
 
             <div class="form-group">
@@ -387,22 +457,32 @@
         </div>
     </form>
 
-    <!-- SUCCESS MESSAGE -->
+    <!-- SUCCESS MESSAGE & RECEIPT -->
     <div id="successScreen" class="success-box hidden">
         <h2>অভিনন্দন! রেজিস্ট্রেশন সম্পন্ন হয়েছে।</h2>
-        <p id="successDetails" style="margin: 15px 0; line-height: 1.6; color: #334155;"></p>
-        <button type="button" class="btn-primary" onclick="location.reload()">নতুন রেজিস্ট্রেশন করুন</button>
+        <p style="font-size: 14px; color: #475569;">নিচে আপনার রেজিস্ট্রেশন রিসিট সংরক্ষিত হলো</p>
+        <div id="receiptCard" class="receipt-card"></div>
+        <div class="btn-group no-print">
+            <button type="button" class="btn-secondary" onclick="window.print()">রিসিট প্রিন্ট / PDF সেভ</button>
+            <button type="button" class="btn-primary" style="margin-top: 0;" onclick="location.reload()">নতুন রেজিস্ট্রেশন করুন</button>
+        </div>
     </div>
 </div>
 
 <script>
-    const FEE_APPLICANT = 1000;
-    const FEE_SPOUSE = 800;
-    const FEE_CHILD = 500;
+    const SETTINGS_KEY = 'reunion_admin_settings';
+    const REGISTRATIONS_KEY = 'reunion_registrations_list';
+    const BD_MOBILE_REGEX = /^01[3-9]\d{8}$/;
 
     const DEFAULT_SETTINGS = {
         bkashNumber: "01700000000",
         paymentNote: "নিচের পার্সোনাল নম্বরে উল্লিখিত টাকা Send Money করে ট্রানজেকশন আইডি (TrxID) সংগ্রহ করুন:",
+        fees: {
+            applicant: 1000,
+            spouse: 800,
+            child: 500,
+            freeChildMaxAge: 5
+        },
         schools: [
             "রংপুর জিলা স্কুল",
             "সরকারি বালিকা উচ্চ বিদ্যালয়",
@@ -418,8 +498,41 @@
         ]
     };
 
+    let activeConfig = JSON.parse(JSON.stringify(DEFAULT_SETTINGS));
+    let calculatedTotalAmount = 0;
+
+    function getSafeConfig() {
+        try {
+            const saved = localStorage.getItem(SETTINGS_KEY);
+            if (!saved) return JSON.parse(JSON.stringify(DEFAULT_SETTINGS));
+            const parsed = JSON.parse(saved);
+            return {
+                ...JSON.parse(JSON.stringify(DEFAULT_SETTINGS)),
+                ...parsed,
+                fees: {
+                    ...DEFAULT_SETTINGS.fees,
+                    ...(parsed.fees || {})
+                }
+            };
+        } catch (e) {
+            console.error("Failed to parse admin settings:", e);
+            return JSON.parse(JSON.stringify(DEFAULT_SETTINGS));
+        }
+    }
+
+    function getSafeRegistrations() {
+        try {
+            const raw = localStorage.getItem(REGISTRATIONS_KEY);
+            const list = raw ? JSON.parse(raw) : [];
+            return Array.isArray(list) ? list : [];
+        } catch (e) {
+            return [];
+        }
+    }
+
     function populateSelect(selectId, list, placeholder) {
         const selectEl = document.getElementById(selectId);
+        const previousVal = selectEl.value;
         selectEl.innerHTML = `<option value="">${placeholder}</option>`;
         list.forEach(item => {
             const opt = document.createElement('option');
@@ -427,21 +540,48 @@
             opt.textContent = item;
             selectEl.appendChild(opt);
         });
+        if (list.includes(previousVal)) {
+            selectEl.value = previousVal;
+        }
     }
 
     function loadAdminConfig() {
-        const saved = localStorage.getItem('reunion_admin_settings');
-        const config = saved ? JSON.parse(saved) : DEFAULT_SETTINGS;
+        activeConfig = getSafeConfig();
 
-        populateSelect('school', config.schools || DEFAULT_SETTINGS.schools, '-- স্কুল নির্বাচন করুন --');
-        populateSelect('bloodGroup', config.bloodGroups || DEFAULT_SETTINGS.bloodGroups, 'নির্বাচন করুন');
-        populateSelect('tshirt', config.tshirtSizes || DEFAULT_SETTINGS.tshirtSizes, 'নির্বাচন করুন');
+        populateSelect('school', activeConfig.schools, '-- স্কুল নির্বাচন করুন --');
+        populateSelect('bloodGroup', activeConfig.bloodGroups, 'নির্বাচন করুন');
+        populateSelect('tshirt', activeConfig.tshirtSizes, 'নির্বাচন করুন');
 
-        document.getElementById('dynamicBkashNumber').textContent = config.bkashNumber || DEFAULT_SETTINGS.bkashNumber;
-        document.getElementById('dynamicPaymentNote').textContent = config.paymentNote || DEFAULT_SETTINGS.paymentNote;
+        document.getElementById('dynamicBkashNumber').textContent = activeConfig.bkashNumber;
+        document.getElementById('dynamicPaymentNote').textContent = activeConfig.paymentNote;
+
+        document.getElementById('spouseFeeLabel').textContent = activeConfig.fees.spouse;
+        const maxFreeAge = activeConfig.fees.freeChildMaxAge;
+        const childFee = activeConfig.fees.child;
+        document.getElementById('childFeeHint').textContent = maxFreeAge > 0
+            ? `* ${maxFreeAge} বছর বা তার কম বয়সী সন্তানের জন্য ফ্রি; ${maxFreeAge} বছরের বেশি হলে প্রতিজন ${childFee} টাকা`
+            : `* প্রতিজন সন্তানের ফি ${childFee} টাকা`;
     }
 
     window.addEventListener('DOMContentLoaded', loadAdminConfig);
+
+    // অন্য ট্যাবে অ্যাডমিন সেটিংস পরিবর্তন করলে লাইভ আপডেট
+    window.addEventListener('storage', function(e) {
+        if (e.key === SETTINGS_KEY) {
+            loadAdminConfig();
+        }
+    });
+
+    function copyBkashNumber() {
+        const num = document.getElementById('dynamicBkashNumber').textContent.trim();
+        const btn = document.getElementById('copyNumberBtn');
+        if (navigator.clipboard && num) {
+            navigator.clipboard.writeText(num).then(() => {
+                btn.textContent = "কপি হয়েছে ✓";
+                setTimeout(() => { btn.textContent = "নম্বর কপি করুন"; }, 2000);
+            });
+        }
+    }
 
     function toggleSpouseField() {
         const isChecked = document.getElementById('hasSpouse').checked;
@@ -475,6 +615,18 @@
         if (row) row.remove();
     }
 
+    function createSummaryLine(label, amountText) {
+        const div = document.createElement('div');
+        div.className = 'summary-line';
+        const s1 = document.createElement('span');
+        s1.textContent = label;
+        const s2 = document.createElement('span');
+        s2.textContent = amountText;
+        div.appendChild(s1);
+        div.appendChild(s2);
+        return div;
+    }
+
     function goToStep2() {
         const school = document.getElementById('school').value.trim();
         const name = document.getElementById('applicantName').value.trim();
@@ -491,8 +643,8 @@
             return;
         }
 
-        if (!/^\d{11}$/.test(mobile)) {
-            errorMsg.textContent = "মোবাইল নম্বরটি অবশ্যই ঠিক ১১ ডিজিটের হতে হবে (যেমন: 017XXXXXXXX)।";
+        if (!BD_MOBILE_REGEX.test(mobile)) {
+            errorMsg.textContent = "সঠিক ১১ ডিজিটের বাংলাদেশি মোবাইল নম্বর দিন (যেমন: 017XXXXXXXX)।";
             errorMsg.style.display = 'block';
             return;
         }
@@ -504,34 +656,55 @@
         }
 
         const childRows = document.querySelectorAll('.child-row');
+        let paidChildrenCount = 0;
+        let freeChildrenCount = 0;
+        const freeMaxAge = Number(activeConfig.fees.freeChildMaxAge ?? 5);
+
         for (let row of childRows) {
             const cName = row.querySelector('.child-name').value.trim();
-            const cAge = row.querySelector('.child-age').value.trim();
-            if (!cName || cAge === '') {
-                errorMsg.textContent = "যোগ করা প্রতিটি সন্তানের নাম ও বয়স লিখুন, অথবা অপ্রয়োজনীয় ঘরটি ✕ চেপে বাদ দিন।";
+            const cAgeRaw = row.querySelector('.child-age').value.trim();
+            const cAge = Number(cAgeRaw);
+
+            if (!cName || cAgeRaw === '' || isNaN(cAge) || cAge < 0 || cAge > 25) {
+                errorMsg.textContent = "প্রতিটি সন্তানের সঠিক নাম ও বয়স (০ থেকে ২৫ বছরের মধ্যে) লিখুন, অথবা ✕ চেপে বাদ দিন।";
                 errorMsg.style.display = 'block';
                 return;
+            }
+
+            if (cAge <= freeMaxAge) {
+                freeChildrenCount++;
+            } else {
+                paidChildrenCount++;
             }
         }
 
         errorMsg.style.display = 'none';
 
-        let total = FEE_APPLICANT;
-        let breakdownHTML = `<div class="summary-line"><span>আবেদনকারী (১ জন):</span><span>${FEE_APPLICANT} টাকা</span></div>`;
+        const feeApplicant = Number(activeConfig.fees.applicant);
+        const feeSpouse = Number(activeConfig.fees.spouse);
+        const feeChild = Number(activeConfig.fees.child);
+
+        let total = feeApplicant;
+        const breakdownEl = document.getElementById('feeBreakdown');
+        breakdownEl.innerHTML = '';
+        breakdownEl.appendChild(createSummaryLine("আবেদনকারী (১ জন):", `${feeApplicant} টাকা`));
 
         if (hasSpouse) {
-            total += FEE_SPOUSE;
-            breakdownHTML += `<div class="summary-line"><span>স্বামী/স্ত্রী (১ জন):</span><span>${FEE_SPOUSE} টাকা</span></div>`;
+            total += feeSpouse;
+            breakdownEl.appendChild(createSummaryLine("স্বামী/স্ত্রী (১ জন):", `${feeSpouse} টাকা`));
         }
 
-        const childCount = childRows.length;
-        if (childCount > 0) {
-            const childrenTotal = childCount * FEE_CHILD;
+        if (paidChildrenCount > 0) {
+            const childrenTotal = paidChildrenCount * feeChild;
             total += childrenTotal;
-            breakdownHTML += `<div class="summary-line"><span>সন্তান (${childCount} জন × ${FEE_CHILD}):</span><span>${childrenTotal} টাকা</span></div>`;
+            breakdownEl.appendChild(createSummaryLine(`সন্তান (${paidChildrenCount} জন × ${feeChild}):`, `${childrenTotal} টাকা`));
         }
 
-        document.getElementById('feeBreakdown').innerHTML = breakdownHTML;
+        if (freeChildrenCount > 0) {
+            breakdownEl.appendChild(createSummaryLine(`শিশু সন্তান (${freeChildrenCount} জন, ≤${freeMaxAge} বছর):`, `০ টাকা (ফ্রি)`));
+        }
+
+        calculatedTotalAmount = total;
         document.getElementById('totalAmountText').textContent = `${total} টাকা`;
 
         document.getElementById('step1').classList.add('hidden');
@@ -548,11 +721,45 @@
         document.getElementById('badge1').classList.add('active');
     }
 
-    // ভবিষ্যতে পেমেন্ট গেটওয়ে / Bangla QR API থেকে TrxID ভেরিফাই করার ফাংশন
     async function verifyGatewayPayment(trxId, expectedAmount) {
-        // এখানে আপনার পেমেন্ট গেটওয়ে API বা Cloud Function কল যুক্ত হবে
-        // উদাহরণ: const res = await fetch(`https://your-gateway-api/verify?trxId=${trxId}`);
+        // ডুপ্লিকেট TrxID প্রতিরোধ (লোকাল স্টোরেজ চেক)
+        const existing = getSafeRegistrations();
+        const isDuplicateTrx = existing.some(r => String(r.trxId).toUpperCase() === trxId.toUpperCase());
+        if (isDuplicateTrx) {
+            return { verified: false, reason: "এই ট্রানজেকশন আইডি (TrxID) ইতিমধ্যেই ব্যবহৃত হয়েছে!" };
+        }
+
+        // ভবিষ্যতে পেমেন্ট গেটওয়ে / Cloud Function API কল এখানে যুক্ত হবে
         return { verified: true, gatewayTrxId: trxId };
+    }
+
+    function renderReceiptCard(data) {
+        const card = document.getElementById('receiptCard');
+        card.innerHTML = '';
+
+        const rows = [
+            ["আবেদনকারীর নাম", data.applicantName],
+            ["মোবাইল নম্বর", data.mobile],
+            ["প্রতিষ্ঠান / স্কুল", data.school],
+            ["রক্তের গ্রুপ ও টি-শার্ট", `${data.bloodGroup} | ${data.tshirt}`],
+            ["স্বামী / স্ত্রী", data.spouse || "নেই"],
+            ["সন্তান সংখ্যা", data.children.length > 0 ? `${data.children.length} জন (${data.children.map(c => `${c.name}-${c.age}ব`).join(', ')})` : "নেই"],
+            ["সর্বমোট পরিশোধ", `${data.totalAmount} টাকা`],
+            ["প্রেরক নম্বর", data.bkashSender],
+            ["ট্রানজেকশন আইডি", data.trxId]
+        ];
+
+        rows.forEach(([label, val]) => {
+            const row = document.createElement('div');
+            row.className = 'receipt-row';
+            const strong = document.createElement('strong');
+            strong.textContent = label + ":";
+            const span = document.createElement('span');
+            span.textContent = val;
+            row.appendChild(strong);
+            row.appendChild(span);
+            card.appendChild(row);
+        });
     }
 
     document.getElementById('reunionForm').addEventListener('submit', async function(e) {
@@ -563,14 +770,14 @@
         const errorMsg = document.getElementById('step2Error');
         const submitBtn = document.getElementById('submitBtn');
 
-        if (!/^\d{11}$/.test(sender)) {
-            errorMsg.textContent = "যে নম্বর থেকে টাকা পাঠিয়েছেন সেটি অবশ্যই ১১ ডিজিটের হতে হবে।";
+        if (!BD_MOBILE_REGEX.test(sender)) {
+            errorMsg.textContent = "যে নম্বর থেকে টাকা পাঠিয়েছেন সেটি সঠিক ১১ ডিজিটের বাংলাদেশি নম্বর হতে হবে।";
             errorMsg.style.display = 'block';
             return;
         }
 
-        if (trxId.length < 6) {
-            errorMsg.textContent = "অনুগ্রহ করে সঠিক ট্রানজেকশন আইডি (TrxID) দিন।";
+        if (!/^[A-Z0-9]{6,20}$/.test(trxId)) {
+            errorMsg.textContent = "অনুগ্রহ করে সঠিক ট্রানজেকশন আইডি (TrxID - শুধু ইংরেজি অক্ষর ও সংখ্যা) দিন।";
             errorMsg.style.display = 'block';
             return;
         }
@@ -579,13 +786,12 @@
         submitBtn.disabled = true;
         submitBtn.textContent = "যাচাই করা হচ্ছে...";
 
-        const totalAmount = document.getElementById('totalAmountText').textContent;
-        const paymentCheck = await verifyGatewayPayment(trxId, totalAmount);
+        const paymentCheck = await verifyGatewayPayment(trxId, calculatedTotalAmount);
 
         if (!paymentCheck.verified) {
             submitBtn.disabled = false;
             submitBtn.textContent = "রেজিস্ট্রেশন সম্পন্ন করুন";
-            errorMsg.textContent = "ট্রানজেকশন আইডিটি সঠিক নয় বা পেমেন্ট পাওয়া যায়নি।";
+            errorMsg.textContent = paymentCheck.reason || "ট্রানজেকশন আইডিটি সঠিক নয় বা পেমেন্ট পাওয়া যায়নি।";
             errorMsg.style.display = 'block';
             return;
         }
@@ -594,7 +800,7 @@
         document.querySelectorAll('.child-row').forEach(row => {
             children.push({
                 name: row.querySelector('.child-name').value.trim(),
-                age: row.querySelector('.child-age').value.trim()
+                age: Number(row.querySelector('.child-age').value.trim())
             });
         });
 
@@ -606,20 +812,22 @@
             tshirt: document.getElementById('tshirt').value,
             spouse: document.getElementById('hasSpouse').checked ? document.getElementById('spouseName').value.trim() : null,
             children: children,
-            totalAmount: totalAmount,
+            totalAmount: calculatedTotalAmount,
             bkashSender: sender,
-            trxId: trxId
+            trxId: trxId,
+            submittedAt: new Date().toLocaleString('bn-BD')
         };
 
-        console.log("Submitted Data:", registrationData);
+        // লোকাল স্টোরেজে রেজিস্ট্রেশন সংরক্ষণ (যাতে অ্যাডমিন প্যানেলে দেখা যায় ও CSV এক্সপোর্ট করা যায়)
+        const existingList = getSafeRegistrations();
+        existingList.push(registrationData);
+        localStorage.setItem(REGISTRATIONS_KEY, JSON.stringify(existingList));
+
+        renderReceiptCard(registrationData);
 
         document.getElementById('reunionForm').classList.add('hidden');
         document.getElementById('stepIndicator').classList.add('hidden');
         document.getElementById('successScreen').classList.remove('hidden');
-        document.getElementById('successDetails').innerHTML = `
-            ধন্যবাদ, <strong>${registrationData.applicantName}</strong>!<br>
-            আপনার ট্রানজেকশন আইডি <strong>${trxId}</strong> (মোট: ${registrationData.totalAmount}) সফলভাবে জমা হয়েছে।
-        `;
     });
 </script>
 
