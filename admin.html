@@ -187,6 +187,7 @@
         input[type="tel"],
         input[type="number"],
         input[type="password"],
+        input[type="url"],
         textarea {
             width: 100%;
             padding: 9px 12px;
@@ -328,6 +329,12 @@
             font-weight: 600;
         }
 
+        .field-hint {
+            font-size: 12px;
+            color: #64748b;
+            margin-top: 4px;
+        }
+
         /* Registrations Table */
         .table-wrap {
             overflow-x: auto;
@@ -450,6 +457,28 @@
         </div>
     </div>
 
+    <!-- রেজিস্ট্রেশন ও পেমেন্ট পেজের নিচের ফুটার ক্রেডিট সেটিংস -->
+    <div class="card" style="margin-bottom: 20px;">
+        <h2>ফুটার / ক্রেডিট সেটিংস (রেজিস্ট্রেশন ও পেমেন্ট উভয় পেজের নিচে দেখাবে)</h2>
+        <div class="grid" style="margin-bottom: 0;">
+            <div class="form-group" style="margin-bottom: 0;">
+                <label for="footerTextInput">পুরো ফুটার লেখা</label>
+                <input type="text" id="footerTextInput" placeholder="@Developed and Designed by Your Friend Al Helal">
+                <div class="field-hint">উদাহরণ: @Developed and Designed by Your Friend Al Helal</div>
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+                <label for="footerLinkTextInput">হাইপারলিঙ্ক টেক্সট</label>
+                <input type="text" id="footerLinkTextInput" placeholder="Al Helal">
+                <div class="field-hint">যে শব্দটি ক্লিকযোগ্য লিঙ্ক হবে (যেমন: Al Helal)</div>
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+                <label for="footerLinkUrlInput">হাইপারলিঙ্ক ঠিকানা (URL)</label>
+                <input type="url" id="footerLinkUrlInput" placeholder="https://facebook.com/your-profile">
+                <div class="field-hint">https:// দিয়ে শুরু হওয়া লিঙ্ক দিন</div>
+            </div>
+        </div>
+    </div>
+
     <!-- রেজিস্ট্রেশন ফি সেটিংস কার্ড -->
     <div class="card" style="margin-bottom: 20px;">
         <h2>রেজিস্ট্রেশন ফি নির্ধারণ (টাকা)</h2>
@@ -568,6 +597,11 @@
     const DEFAULT_SETTINGS = {
         bkashNumber: "01700000000",
         paymentNote: "নিচের পার্সোনাল নম্বরে উল্লিখিত টাকা Send Money করে ট্রানজেকশন আইডি (TrxID) সংগ্রহ করুন:",
+        footerCredit: {
+            text: "@Developed and Designed by Your Friend Al Helal",
+            linkText: "Al Helal",
+            linkUrl: "https://facebook.com"
+        },
         fees: {
             applicant: 1000,
             spouse: 800,
@@ -641,6 +675,10 @@
             return {
                 ...JSON.parse(JSON.stringify(DEFAULT_SETTINGS)),
                 ...parsed,
+                footerCredit: {
+                    ...DEFAULT_SETTINGS.footerCredit,
+                    ...(parsed.footerCredit || {})
+                },
                 fees: {
                     ...DEFAULT_SETTINGS.fees,
                     ...(parsed.fees || {})
@@ -735,6 +773,10 @@
             currentSettings = {
                 ...JSON.parse(JSON.stringify(DEFAULT_SETTINGS)),
                 ...cloudData,
+                footerCredit: {
+                    ...DEFAULT_SETTINGS.footerCredit,
+                    ...(cloudData.footerCredit || {})
+                },
                 fees: {
                     ...DEFAULT_SETTINGS.fees,
                     ...(cloudData.fees || {})
@@ -901,6 +943,10 @@
         document.getElementById('bkashNumberInput').value = currentSettings.bkashNumber || "";
         document.getElementById('paymentNoteInput').value = currentSettings.paymentNote || "";
 
+        document.getElementById('footerTextInput').value = currentSettings.footerCredit?.text || "";
+        document.getElementById('footerLinkTextInput').value = currentSettings.footerCredit?.linkText || "";
+        document.getElementById('footerLinkUrlInput').value = currentSettings.footerCredit?.linkUrl || "";
+
         document.getElementById('feeApplicantInput').value = currentSettings.fees.applicant;
         document.getElementById('feeSpouseInput').value = currentSettings.fees.spouse;
         document.getElementById('feeChildInput').value = currentSettings.fees.child;
@@ -1043,6 +1089,9 @@
 
         const bkash = document.getElementById('bkashNumberInput').value.trim();
         const note = document.getElementById('paymentNoteInput').value.trim();
+        const footerText = document.getElementById('footerTextInput').value.trim();
+        const footerLinkText = document.getElementById('footerLinkTextInput').value.trim();
+        const footerLinkUrl = document.getElementById('footerLinkUrlInput').value.trim();
 
         const feeApplicant = Number(document.getElementById('feeApplicantInput').value);
         const feeSpouse = Number(document.getElementById('feeSpouseInput').value);
@@ -1057,6 +1106,10 @@
             return showToast("পেমেন্ট নির্দেশনা ঘরটি ফাঁকা রাখা যাবে না!", "#fee2e2", "#991b1b");
         }
 
+        if (footerLinkUrl && !/^https?:\/\/.+/i.test(footerLinkUrl)) {
+            return showToast("হাইপারলিঙ্ক URL অবশ্যই http:// বা https:// দিয়ে শুরু হতে হবে!", "#fee2e2", "#991b1b");
+        }
+
         if (isNaN(feeApplicant) || feeApplicant < 0 || isNaN(feeSpouse) || feeSpouse < 0 || isNaN(feeChild) || feeChild < 0) {
             return showToast("সঠিক ফি পরিমাণ (০ বা তার বেশি) লিখুন!", "#fee2e2", "#991b1b");
         }
@@ -1067,6 +1120,11 @@
 
         currentSettings.bkashNumber = bkash;
         currentSettings.paymentNote = note;
+        currentSettings.footerCredit = {
+            text: footerText,
+            linkText: footerLinkText,
+            linkUrl: footerLinkUrl
+        };
         currentSettings.fees = {
             applicant: feeApplicant,
             spouse: feeSpouse,
