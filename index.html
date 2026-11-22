@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ঈদ পুনর্মিলনী ২০২৬ - রেজিস্ট্রেশন ফর্ম</title>
+    <title>ঈদ পুনর্মিলনী ২০২৭ - রেজিস্ট্রেশন ফর্ম</title>
     <style>
         :root {
             --primary: #0f766e;
@@ -355,7 +355,7 @@
 
 <div class="container">
     <div class="header">
-        <h1>ঈদ পুনর্মিলনী ২০২৬</h1>
+        <h1>ঈদ পুনর্মিলনী ২০২৭</h1>
         <p>অনলাইন রেজিস্ট্রেশন ফর্ম</p>
     </div>
 
@@ -470,8 +470,8 @@
 </div>
 
 <script>
-    const SETTINGS_KEY = 'reunion_admin_settings';
-    const REGISTRATIONS_KEY = 'reunion_registrations_list';
+    const SETTINGS_KEY = 'reunion_2027_admin_settings';
+    const REGISTRATIONS_KEY = 'reunion_2027_registrations_list';
     const BD_MOBILE_REGEX = /^01[3-9]\d{8}$/;
 
     const DEFAULT_SETTINGS = {
@@ -530,6 +530,34 @@
         }
     }
 
+    function getNextRegistrationNumber(existingList) {
+        let maxNum = 9110000;
+        existingList.forEach(item => {
+            const num = Number(item.registrationNumber);
+            if (!isNaN(num) && num >= maxNum) {
+                maxNum = num;
+            }
+        });
+        return maxNum + 1;
+    }
+
+    function formatDateEnglish(dateObj) {
+        const months = [
+            "January", "February", "March", "April", "May", "June",
+            "July", "August", "September", "October", "November", "December"
+        ];
+        const day = dateObj.getDate();
+        const month = months[dateObj.getMonth()];
+        const year = dateObj.getFullYear();
+        return `${day} ${month} ${year}`;
+    }
+
+    function formatTimeHHMM(dateObj) {
+        const hh = String(dateObj.getHours()).padStart(2, '0');
+        const mm = String(dateObj.getMinutes()).padStart(2, '0');
+        return `${hh}:${mm}`;
+    }
+
     function populateSelect(selectId, list, placeholder) {
         const selectEl = document.getElementById(selectId);
         const previousVal = selectEl.value;
@@ -565,7 +593,6 @@
 
     window.addEventListener('DOMContentLoaded', loadAdminConfig);
 
-    // অন্য ট্যাবে অ্যাডমিন সেটিংস পরিবর্তন করলে লাইভ আপডেট
     window.addEventListener('storage', function(e) {
         if (e.key === SETTINGS_KEY) {
             loadAdminConfig();
@@ -722,14 +749,11 @@
     }
 
     async function verifyGatewayPayment(trxId, expectedAmount) {
-        // ডুপ্লিকেট TrxID প্রতিরোধ (লোকাল স্টোরেজ চেক)
         const existing = getSafeRegistrations();
         const isDuplicateTrx = existing.some(r => String(r.trxId).toUpperCase() === trxId.toUpperCase());
         if (isDuplicateTrx) {
             return { verified: false, reason: "এই ট্রানজেকশন আইডি (TrxID) ইতিমধ্যেই ব্যবহৃত হয়েছে!" };
         }
-
-        // ভবিষ্যতে পেমেন্ট গেটওয়ে / Cloud Function API কল এখানে যুক্ত হবে
         return { verified: true, gatewayTrxId: trxId };
     }
 
@@ -737,16 +761,24 @@
         const card = document.getElementById('receiptCard');
         card.innerHTML = '';
 
+        const childrenDetailText = data.children.length > 0
+            ? `${data.children.length} জন (${data.children.map(c => `${c.name} - ${c.age} বছর`).join(', ')})`
+            : "0 জন";
+
         const rows = [
-            ["আবেদনকারীর নাম", data.applicantName],
-            ["মোবাইল নম্বর", data.mobile],
-            ["প্রতিষ্ঠান / স্কুল", data.school],
-            ["রক্তের গ্রুপ ও টি-শার্ট", `${data.bloodGroup} | ${data.tshirt}`],
-            ["স্বামী / স্ত্রী", data.spouse || "নেই"],
-            ["সন্তান সংখ্যা", data.children.length > 0 ? `${data.children.length} জন (${data.children.map(c => `${c.name}-${c.age}ব`).join(', ')})` : "নেই"],
-            ["সর্বমোট পরিশোধ", `${data.totalAmount} টাকা`],
-            ["প্রেরক নম্বর", data.bkashSender],
-            ["ট্রানজেকশন আইডি", data.trxId]
+            ["Registration Number", String(data.registrationNumber)],
+            ["Applicant Name", data.applicantName],
+            ["Mobile Number", data.mobile],
+            ["School Name", data.school],
+            ["Blood Group", data.bloodGroup],
+            ["TShirt Size", data.tshirt],
+            ["Spouse Name", data.spouse || "-"],
+            ["Children (নাম ও বয়স)", childrenDetailText],
+            ["Total Amount", `${data.totalAmount} টাকা`],
+            ["Sender Number", data.bkashSender],
+            ["TrxID", data.trxId],
+            ["Date", data.date],
+            ["Time", data.time]
         ];
 
         rows.forEach(([label, val]) => {
@@ -804,22 +836,28 @@
             });
         });
 
+        const now = new Date();
+        const existingList = getSafeRegistrations();
+        const regNumber = getNextRegistrationNumber(existingList);
+
         const registrationData = {
-            school: document.getElementById('school').value,
+            registrationNumber: regNumber,
             applicantName: document.getElementById('applicantName').value.trim(),
             mobile: document.getElementById('mobile').value.trim(),
+            school: document.getElementById('school').value,
             bloodGroup: document.getElementById('bloodGroup').value,
             tshirt: document.getElementById('tshirt').value,
-            spouse: document.getElementById('hasSpouse').checked ? document.getElementById('spouseName').value.trim() : null,
+            spouse: document.getElementById('hasSpouse').checked ? document.getElementById('spouseName').value.trim() : "",
+            childrenCount: children.length,
             children: children,
             totalAmount: calculatedTotalAmount,
             bkashSender: sender,
             trxId: trxId,
-            submittedAt: new Date().toLocaleString('bn-BD')
+            date: formatDateEnglish(now),
+            time: formatTimeHHMM(now),
+            submittedAt: now.toLocaleString('bn-BD')
         };
 
-        // লোকাল স্টোরেজে রেজিস্ট্রেশন সংরক্ষণ (যাতে অ্যাডমিন প্যানেলে দেখা যায় ও CSV এক্সপোর্ট করা যায়)
-        const existingList = getSafeRegistrations();
         existingList.push(registrationData);
         localStorage.setItem(REGISTRATIONS_KEY, JSON.stringify(existingList));
 

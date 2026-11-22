@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>অ্যাডমিন প্যানেল - ঈদ পুনর্মিলনী ২০২৬</title>
+    <title>অ্যাডমিন প্যানেল - ঈদ পুনর্মিলনী ২০২৭</title>
     <style>
         :root {
             --primary: #0f766e;
@@ -31,7 +31,7 @@
         }
 
         .container {
-            max-width: 960px;
+            max-width: 1120px;
             margin: 0 auto;
         }
 
@@ -288,13 +288,14 @@
         table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 13px;
+            font-size: 12.5px;
         }
 
         th, td {
             border: 1px solid #e2e8f0;
-            padding: 8px 10px;
+            padding: 8px 9px;
             text-align: left;
+            white-space: nowrap;
         }
 
         th {
@@ -324,11 +325,11 @@
 <!-- অ্যাডমিন পিন লগইন স্ক্রিন -->
 <div id="loginScreen" class="login-wrapper">
     <h2>অ্যাডমিন লগইন</h2>
-    <p>ঈদ পুনর্মিলনী ২০২৬ অ্যাডমিন প্যানেলে প্রবেশ করতে পিন দিন</p>
+    <p>ঈদ পুনর্মিলনী ২০২৭ অ্যাডমিন প্যানেলে প্রবেশ করতে পিন দিন</p>
     <form id="loginForm">
         <div class="form-group">
             <label for="adminPinInput">অ্যাডমিন পিন</label>
-            <input type="password" id="adminPinInput" placeholder="পিন লিখুন (ডিফল্ট: 2026)" required>
+            <input type="password" id="adminPinInput" placeholder="পিন লিখুন (ডিফল্ট: 2027)" required>
         </div>
         <button type="submit" class="btn-save" style="width: 100%; font-size: 15px; padding: 10px;">প্রবেশ করুন</button>
     </form>
@@ -337,7 +338,7 @@
 <!-- মূল অ্যাডমিন প্যানেল -->
 <div id="adminDashboard" class="container hidden">
     <div class="topbar">
-        <h1>অ্যাডমিন প্যানেল - ঈদ পুনর্মিলনী ২০২৬</h1>
+        <h1>অ্যাডমিন প্যানেল - ঈদ পুনর্মিলনী ২০২৭</h1>
         <div class="topbar-actions">
             <a href="index.html" target="_blank" class="btn-link">রেজিস্ট্রেশন ফর্ম দেখুন ↗</a>
             <button type="button" class="btn-logout" onclick="logoutAdmin()">লগআউট</button>
@@ -360,8 +361,8 @@
             </div>
             <div class="form-group" style="margin-bottom: 0;">
                 <label for="newAdminPinInput">অ্যাডমিন পিন পরিবর্তন (কমপক্ষে ৪ অক্ষর)</label>
-                <input type="text" id="newAdminPinInput" maxlength="12" placeholder="2026">
-                <div class="pin-note">ডিফল্ট পিন: 2026 (পরিবর্তন করে সেভ করতে পারেন)</div>
+                <input type="text" id="newAdminPinInput" maxlength="12" placeholder="2027">
+                <div class="pin-note">ডিফল্ট পিন: 2027 (পরিবর্তন করে সেভ করতে পারেন)</div>
             </div>
         </div>
     </div>
@@ -428,7 +429,7 @@
         <button type="button" class="btn-save" onclick="saveAllSettings()">✓ Save Changes (সব তথ্য সেভ করুন)</button>
     </div>
 
-    <!-- জমা হওয়া রেজিস্ট্রেশন তালিকা -->
+    <!-- জমা হওয়া রেজিস্ট্রেশন তালিকা (নমুনা ফাইলের কলাম ক্রমে + সন্তানদের নাম ও বয়সসহ) -->
     <div class="card">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
             <h2 style="margin-bottom: 0; border-bottom: none; padding-bottom: 0;">
@@ -440,17 +441,23 @@
             <table>
                 <thead>
                     <tr>
-                        <th>নাম</th>
-                        <th>মোবাইল</th>
-                        <th>স্কুল</th>
-                        <th>রক্ত / টি-শার্ট</th>
-                        <th>পরিবার</th>
-                        <th>মোট ফি</th>
-                        <th>TrxID (প্রেরক)</th>
+                        <th>Registration Number</th>
+                        <th>Applicant Name</th>
+                        <th>Mobile Number</th>
+                        <th>School Name</th>
+                        <th>Blood Group</th>
+                        <th>TShirt Size</th>
+                        <th>Spouse Name</th>
+                        <th>Children (নাম ও বয়স)</th>
+                        <th>Total Amount</th>
+                        <th>Sender Number</th>
+                        <th>TrxID</th>
+                        <th>Date</th>
+                        <th>Time</th>
                     </tr>
                 </thead>
                 <tbody id="registrationsTableBody">
-                    <tr><td colspan="7" style="text-align: center; color: #64748b;">এখনো কোনো রেজিস্ট্রেশন জমা হয়নি।</td></tr>
+                    <tr><td colspan="13" style="text-align: center; color: #64748b;">এখনো কোনো রেজিস্ট্রেশন জমা হয়নি।</td></tr>
                 </tbody>
             </table>
         </div>
@@ -458,12 +465,12 @@
 </div>
 
 <script>
-    const SETTINGS_KEY = 'reunion_admin_settings';
-    const REGISTRATIONS_KEY = 'reunion_registrations_list';
-    const AUTH_SESSION_KEY = 'reunion_admin_authenticated';
+    const SETTINGS_KEY = 'reunion_2027_admin_settings';
+    const REGISTRATIONS_KEY = 'reunion_2027_registrations_list';
+    const AUTH_SESSION_KEY = 'reunion_2027_admin_authenticated';
 
     const DEFAULT_SETTINGS = {
-        adminPin: "2026",
+        adminPin: "2027",
         bkashNumber: "01700000000",
         paymentNote: "নিচের পার্সোনাল নম্বরে উল্লিখিত টাকা Send Money করে ট্রানজেকশন আইডি (TrxID) সংগ্রহ করুন:",
         fees: {
@@ -519,12 +526,27 @@
         }
     }
 
+    function getChildrenCountValue(reg) {
+        if (Array.isArray(reg.children)) return reg.children.length;
+        const n = Number(reg.childrenCount);
+        return isNaN(n) ? 0 : n;
+    }
+
+    function formatChildrenDetailsForTable(reg) {
+        const count = getChildrenCountValue(reg);
+        if (!Array.isArray(reg.children) || reg.children.length === 0) {
+            return `${count} জন`;
+        }
+        const details = reg.children.map(c => `${c.name} (${c.age} বছর)`).join(', ');
+        return `${count} জন — ${details}`;
+    }
+
     // Login Handling
     document.getElementById('loginForm').addEventListener('submit', function(e) {
         e.preventDefault();
         const enteredPin = document.getElementById('adminPinInput').value.trim();
         const settings = getSafeSettings();
-        if (enteredPin === String(settings.adminPin || "2026")) {
+        if (enteredPin === String(settings.adminPin || "2027")) {
             sessionStorage.setItem(AUTH_SESSION_KEY, 'true');
             unlockDashboard();
         } else {
@@ -554,7 +576,7 @@
 
         document.getElementById('bkashNumberInput').value = currentSettings.bkashNumber || "";
         document.getElementById('paymentNoteInput').value = currentSettings.paymentNote || "";
-        document.getElementById('newAdminPinInput').value = currentSettings.adminPin || "2026";
+        document.getElementById('newAdminPinInput').value = currentSettings.adminPin || "2027";
 
         document.getElementById('feeApplicantInput').value = currentSettings.fees.applicant;
         document.getElementById('feeSpouseInput').value = currentSettings.fees.spouse;
@@ -609,7 +631,7 @@
                 li.appendChild(actions);
             } else {
                 const span = document.createElement('span');
-                span.textContent = item; // XSS-safe textContent
+                span.textContent = item;
 
                 const actions = document.createElement('div');
                 actions.className = 'actions';
@@ -694,7 +716,6 @@
         const feeChild = Number(document.getElementById('feeChildInput').value);
         const freeChildMaxAge = Number(document.getElementById('freeChildMaxAgeInput').value);
 
-        // বাধ্যতামূলক ১১ ডিজিটের বাংলাদেশি মোবাইল নম্বর যাচাই
         if (!/^01[3-9]\d{8}$/.test(bkash)) {
             return showToast("সঠিক ১১ ডিজিটের বিকাশ/মোবাইল নম্বর দিন (যেমন: 017XXXXXXXX)!", "#fee2e2", "#991b1b");
         }
@@ -758,7 +779,7 @@
         if (list.length === 0) {
             const tr = document.createElement('tr');
             const td = document.createElement('td');
-            td.colSpan = 7;
+            td.colSpan = 13;
             td.style.textAlign = 'center';
             td.style.color = '#64748b';
             td.textContent = 'এখনো কোনো রেজিস্ট্রেশন জমা হয়নি।';
@@ -767,23 +788,24 @@
             return;
         }
 
-        list.slice().reverse().forEach(reg => {
+        list.slice().reverse().forEach((reg, idx) => {
             const tr = document.createElement('tr');
-            const familyParts = [];
-            if (reg.spouse) familyParts.push(`স্বামী/স্ত্রী: ${reg.spouse}`);
-            if (Array.isArray(reg.children) && reg.children.length > 0) {
-                const cText = reg.children.map(c => `${c.name} (${c.age}ব)`).join(', ');
-                familyParts.push(`সন্তান: ${cText}`);
-            }
+            const fallbackRegNo = 9110001 + (list.length - 1 - idx);
 
             const cells = [
+                String(reg.registrationNumber || fallbackRegNo),
                 reg.applicantName || '-',
                 reg.mobile || '-',
                 reg.school || '-',
-                `${reg.bloodGroup || '-'} / ${reg.tshirt || '-'}`,
-                familyParts.length ? familyParts.join(' | ') : 'শুধু আবেদনকারী',
-                `${reg.totalAmount || 0} টাকা`,
-                `${reg.trxId || '-'} (${reg.bkashSender || '-'})`
+                reg.bloodGroup || '-',
+                reg.tshirt || '-',
+                reg.spouse || '-',
+                formatChildrenDetailsForTable(reg),
+                String(reg.totalAmount ?? 0),
+                reg.bkashSender || '-',
+                reg.trxId || '-',
+                reg.date || '-',
+                reg.time || '-'
             ];
 
             cells.forEach(text => {
@@ -796,47 +818,65 @@
         });
     }
 
+    // CSV ডাউনলোডে নমুনা ফাইলের কলাম ও Children কলামে শুধু সন্তানের সংখ্যা (0, 1, 2...)
     function exportRegistrationsCSV() {
         const list = getSafeRegistrations();
         if (list.length === 0) {
             return showToast("ডাউনলোড করার মতো কোনো রেজিস্ট্রেশন তথ্য নেই।", "#fef3c7", "#92400e");
         }
 
-        const headers = ["Name", "Mobile", "School", "BloodGroup", "TShirt", "Spouse", "Children", "TotalAmount", "SenderNumber", "TrxID", "SubmittedAt"];
+        const headers = [
+            "Registration Number",
+            "Applicant Name",
+            "Mobile Number",
+            "School Name",
+            "Blood Group",
+            "TShirt Size",
+            "Spouse Name",
+            "Children",
+            "Total Amount",
+            "Sender Number",
+            "TrxID",
+            "Date",
+            "Time"
+        ];
         const escapeCSV = (val) => `"${String(val ?? '').replace(/"/g, '""')}"`;
 
-        const rows = list.map(r => [
-            r.applicantName,
-            r.mobile,
-            r.school,
-            r.bloodGroup,
-            r.tshirt,
-            r.spouse || '',
-            (r.children || []).map(c => `${c.name} (${c.age}y)`).join('; '),
-            r.totalAmount,
-            r.bkashSender,
-            r.trxId,
-            r.submittedAt || ''
-        ].map(escapeCSV).join(','));
+        const rows = list.map((reg, idx) => {
+            const fallbackRegNo = 9110001 + idx;
+            return [
+                reg.registrationNumber || fallbackRegNo,
+                reg.applicantName || '',
+                reg.mobile || '',
+                reg.school || '',
+                reg.bloodGroup || '',
+                reg.tshirt || '',
+                reg.spouse || '',
+                getChildrenCountValue(reg),
+                reg.totalAmount ?? 0,
+                reg.bkashSender || '',
+                reg.trxId || '',
+                reg.date || '',
+                reg.time || ''
+            ].map(escapeCSV).join(',');
+        });
 
-        const csvContent = "﻿" + [headers.join(','), ...rows].join('\\n');
+        const csvContent = "\uFEFF" + [headers.join(','), ...rows].join('\n');
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = 'eid_reunion_2026_registrations.csv';
+        a.download = 'eid_reunion_2027_registrations.csv';
         a.click();
         URL.revokeObjectURL(url);
     }
 
-    // অন্য ট্যাবে নতুন রেজিস্ট্রেশন জমা হলে লাইভ আপডেট
     window.addEventListener('storage', function(e) {
         if (e.key === REGISTRATIONS_KEY && sessionStorage.getItem(AUTH_SESSION_KEY) === 'true') {
             renderRegistrationsTable();
         }
     });
 
-    // সেশন চেক
     if (sessionStorage.getItem(AUTH_SESSION_KEY) === 'true') {
         unlockDashboard();
     }
