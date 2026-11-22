@@ -3,185 +3,596 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ঈদ পুনর্মিলনী রেজিস্ট্রেশন</title>
+    <title>ঈদ পুনর্মিলনী ২০২৬ - রেজিস্ট্রেশন ফর্ম</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f6f9; margin: 0; padding: 20px; }
-        .container { max-width: 600px; margin: auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        h2 { text-align: center; color: #1a5f7a; margin-bottom: 25px; }
-        .form-group { margin-bottom: 15px; }
-        label { display: block; margin-bottom: 5px; font-weight: bold; color: #333; }
-        input[type="text"], input[type="tel"], select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
-        .dynamic-row { background: #eef2f7; padding: 10px; margin-top: 10px; border-radius: 4px; position: relative; }
-        button { width: 100%; background-color: #1a5f7a; color: white; padding: 12px; border: none; border-radius: 4px; font-size: 16px; cursor: pointer; margin-top: 15px; }
-        button:hover { background-color: #154c62; }
-        .btn-add { background-color: #28a745; width: auto; padding: 5px 10px; font-size: 14px; margin-top: 5px; }
-        .btn-remove { background-color: #dc3545; width: auto; padding: 5px 10px; font-size: 14px; margin-top: 5px; margin-bottom: 10px; }
-        #registrationOutput { margin-top: 20px; padding: 15px; background: #d4edda; color: #155724; border-radius: 4px; display: none; text-align: center; font-weight: bold; }
+        :root {
+            --primary: #0f766e;
+            --primary-hover: #115e59;
+            --bg: #f0fdf4;
+            --card-bg: #ffffff;
+            --text: #1e293b;
+            --border: #cbd5e1;
+            --danger: #ef4444;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            padding: 20px 12px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+        }
+
+        .container {
+            background: var(--card-bg);
+            width: 100%;
+            max-width: 550px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            padding: 24px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 15px;
+        }
+
+        .header h1 {
+            color: var(--primary);
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            font-size: 14px;
+            color: #64748b;
+        }
+
+        /* Step Indicator */
+        .steps {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 24px;
+            gap: 10px;
+        }
+
+        .step-badge {
+            flex: 1;
+            text-align: center;
+            padding: 8px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            background: #e2e8f0;
+            color: #64748b;
+        }
+
+        .step-badge.active {
+            background: var(--primary);
+            color: #ffffff;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 6px;
+            font-size: 14px;
+        }
+
+        input[type="text"],
+        input[type="tel"],
+        input[type="number"],
+        select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 15px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        input:focus, select:focus {
+            border-color: var(--primary);
+        }
+
+        .row-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        /* Family & Dynamic Children Section */
+        .family-box {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 14px;
+            margin-bottom: 16px;
+        }
+
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .checkbox-label input {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--primary);
+        }
+
+        .child-row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            margin-top: 10px;
+            background: #ffffff;
+            padding: 8px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+        }
+
+        .child-row input[type="text"] {
+            flex: 2;
+        }
+
+        .child-row input[type="number"] {
+            flex: 1;
+        }
+
+        .btn-remove {
+            background: var(--danger);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            width: 34px;
+            height: 38px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .btn-remove:hover {
+            background: #dc2626;
+        }
+
+        .btn-add {
+            background: #e0f2fe;
+            color: #0369a1;
+            border: 1px dashed #0284c7;
+            padding: 8px 14px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 10px;
+            width: 100%;
+        }
+
+        .btn-add:hover {
+            background: #bae6fd;
+        }
+
+        /* Buttons */
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-hover);
+        }
+
+        .btn-secondary {
+            background: #64748b;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 16px;
+        }
+
+        /* Payment Summary Box */
+        .payment-summary {
+            background: #ecfdf5;
+            border: 1px solid #6ee7b7;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 18px;
+        }
+
+        .payment-summary h3 {
+            color: var(--primary);
+            margin-bottom: 10px;
+            font-size: 17px;
+        }
+
+        .summary-line {
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+            margin-bottom: 6px;
+        }
+
+        .summary-total {
+            border-top: 1px solid #a7f3d0;
+            padding-top: 8px;
+            margin-top: 8px;
+            font-weight: bold;
+            font-size: 16px;
+            color: #065f46;
+        }
+
+        .bkash-info {
+            background: #fdf2f8;
+            border: 1px solid #fbcfe8;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            font-size: 14px;
+            color: #9d174d;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .error-msg {
+            color: var(--danger);
+            font-size: 13px;
+            margin-top: 5px;
+            display: none;
+        }
+
+        .success-box {
+            text-align: center;
+            padding: 20px 10px;
+        }
+
+        .success-box h2 {
+            color: var(--primary);
+            margin-bottom: 10px;
+        }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>ঈদ পুনর্মিলনী ২০২৬ রেজিস্ট্রেশন</h2>
-    <form id="registrationForm">
-        <div class="form-group">
-            <label for="schoolName">স্কুলের নাম</label>
-            <select id="schoolName" required>
-                <option value="">স্কুল নির্বাচন করুন</option>
-                <!-- অ্যাডমিন প্যানেল থেকে এই অপশনগুলো আসবে -->
-                <option value="School A">সরকারি করোনেশন মাধ্যমিক বিদ্যালয়</option>
-                <option value="School B">আর.কে হাই স্কুল</option>
-                <option value="School C">ক্যান্টনমেন্ট পাবলিক স্কুল ও কলেজ</option>
-            </select>
-        </div>
+    <div class="header">
+        <h1>ঈদ পুনর্মিলনী ২০২৬</h1>
+        <p>অনলাইন রেজিস্ট্রেশন ফর্ম</p>
+    </div>
 
-        <div class="form-group">
-            <label for="fullName">আবেদনকারীর নাম</label>
-            <input type="text" id="fullName" required placeholder="আপনার নাম লিখুন">
-        </div>
+    <!-- Step Indicator -->
+    <div class="steps" id="stepIndicator">
+        <div class="step-badge active" id="badge1">১. ব্যক্তিগত ও পারিবারিক তথ্য</div>
+        <div class="step-badge" id="badge2">২. পেমেন্ট সম্পন্ন করুন</div>
+    </div>
 
-        <div class="form-group">
-            <label for="mobileNo">মোবাইল নম্বর</label>
-            <input type="tel" id="mobileNo" required placeholder="01XXXXXXXXX">
-        </div>
-
-        <div class="form-group">
-            <label for="bloodGroup">ব্লাড গ্রুপ</label>
-            <select id="bloodGroup" required>
-                <option value="">গ্রুপ সিলেক্ট করুন</option>
-                <option value="A+">A+</option>
-                <option value="A-">A-</option>
-                <option value="B+">B+</option>
-                <option value="B-">B-</option>
-                <option value="O+">O+</option>
-                <option value="O-">O-</option>
-                <option value="AB+">AB+</option>
-                <option value="AB-">AB-</option>
-            </select>
-        </div>
-
-        <div class="form-group">
-            <label for="tshirtSize">টি-শার্ট সাইজ</label>
-            <select id="tshirtSize" required>
-                <option value="">সাইজ সিলেক্ট করুন</option>
-                <option value="S">S</option>
-                <option value="M">M</option>
-                <option value="L">L</option>
-                <option value="XL">XL</option>
-                <option value="XXL">XXL</option>
-            </select>
-        </div>
-
-        <div class="form-group">
-            <label>স্বামী/স্ত্রী</label>
-            <div>
-                <input type="checkbox" id="hasSpouse" onchange="toggleSpouseField()"> সাথে আনছেন?
+    <form id="reunionForm" novalidate>
+        <!-- STEP 1: PERSONAL & FAMILY INFO -->
+        <div id="step1">
+            <div class="form-group">
+                <label for="school">প্রতিষ্ঠান / স্কুলের নাম *</label>
+                <select id="school" required>
+                    <option value="">-- স্কুল নির্বাচন করুন --</option>
+                    <option value="রংপুর জিলা স্কুল">রংপুর জিলা স্কুল</option>
+                    <option value="সরকারি বালিকা উচ্চ বিদ্যালয়">সরকারি বালিকা উচ্চ বিদ্যালয়</option>
+                    <option value="ক্যান্টনমেন্ট পাবলিক স্কুল ও কলেজ">ক্যান্টনমেন্ট পাবলিক স্কুল ও কলেজ</option>
+                    <option value="পুলিশ লাইন্স স্কুল অ্যান্ড কলেজ">পুলিশ লাইন্স স্কুল অ্যান্ড কলেজ</option>
+                    <option value="অন্যান্য">অন্যান্য</option>
+                </select>
             </div>
-            <div id="spouseField" style="display:none; margin-top:10px;">
-                <input type="text" id="spouseName" placeholder="স্বামী/স্ত্রীর নাম">
+
+            <div class="form-group">
+                <label for="applicantName">আবেদনকারীর পূর্ণ নাম *</label>
+                <input type="text" id="applicantName" placeholder="আপনার নাম লিখুন" required>
+            </div>
+
+            <div class="form-group">
+                <label for="mobile">মোবাইল নম্বর *</label>
+                <input type="tel" id="mobile" placeholder="017XXXXXXXX" required>
+            </div>
+
+            <div class="row-2">
+                <div class="form-group">
+                    <label for="bloodGroup">রক্তের গ্রুপ *</label>
+                    <select id="bloodGroup" required>
+                        <option value="">নির্বাচন করুন</option>
+                        <option value="A+">A+</option>
+                        <option value="A-">A-</option>
+                        <option value="B+">B+</option>
+                        <option value="B-">B-</option>
+                        <option value="O+">O+</option>
+                        <option value="O-">O-</option>
+                        <option value="AB+">AB+</option>
+                        <option value="AB-">AB-</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="tshirt">টি-শার্ট সাইজ *</label>
+                    <select id="tshirt" required>
+                        <option value="">নির্বাচন করুন</option>
+                        <option value="S">S (38)</option>
+                        <option value="M">M (40)</option>
+                        <option value="L">L (42)</option>
+                        <option value="XL">XL (44)</option>
+                        <option value="XXL">XXL (46)</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Spouse Section -->
+            <div class="family-box">
+                <label class="checkbox-label">
+                    <input type="checkbox" id="hasSpouse" onchange="toggleSpouseField()">
+                    স্বামী / স্ত্রী সাথে আসবেন
+                </label>
+                <div id="spouseFieldContainer" class="form-group hidden" style="margin-top: 10px; margin-bottom: 0;">
+                    <label for="spouseName">স্বামী / স্ত্রীর নাম *</label>
+                    <input type="text" id="spouseName" placeholder="স্বামী বা স্ত্রীর নাম লিখুন">
+                </div>
+            </div>
+
+            <!-- Dynamic Children Section -->
+            <div class="family-box">
+                <label>সন্তানদের তথ্য (যদি সাথে আসে)</label>
+                <div id="childrenContainer"></div>
+                <button type="button" class="btn-add" onclick="addChildField()">+ সন্তান যোগ করুন</button>
+            </div>
+
+            <p class="error-msg" id="step1Error">অনুগ্রহ করে তারকা (*) চিহ্নিত সকল আবশ্যক তথ্য সঠিকভাবে পূরণ করুন।</p>
+            <button type="button" class="btn-primary" onclick="goToStep2()">পরবর্তী ধাপ (Next) →</button>
+        </div>
+
+        <!-- STEP 2: PAYMENT INFO -->
+        <div id="step2" class="hidden">
+            <div class="payment-summary">
+                <h3>রেজিস্ট্রেশন ফি হিসাব</h3>
+                <div id="feeBreakdown"></div>
+                <div class="summary-line summary-total">
+                    <span>সর্বমোট প্রদেয় টাকা:</span>
+                    <span id="totalAmountText">০ টাকা</span>
+                </div>
+            </div>
+
+            <div class="bkash-info">
+                <strong>বিকাশ পেমেন্ট নির্দেশনা:</strong><br>
+                নিচের পার্সোনাল নম্বরে উল্লিখিত টাকা <strong>Send Money</strong> করে ট্রানজেকশন আইডি (TrxID) সংগ্রহ করুন:<br>
+                <strong>বিকাশ নম্বর: 01700-000000</strong>
+            </div>
+
+            <div class="form-group">
+                <label for="senderNumber">যে নম্বর থেকে টাকা পাঠিয়েছেন *</label>
+                <input type="tel" id="senderNumber" placeholder="01XXXXXXXXX" required>
+            </div>
+
+            <div class="form-group">
+                <label for="trxId">বিকাশ ট্রানজেকশন আইডি (TrxID) *</label>
+                <input type="text" id="trxId" placeholder="যেমন: 9H7G6F5D4S" style="text-transform: uppercase;" required>
+            </div>
+
+            <p class="error-msg" id="step2Error">অনুগ্রহ করে সঠিক বিকাশ নম্বর এবং ট্রানজেকশন আইডি দিন।</p>
+
+            <div class="btn-group">
+                <button type="button" class="btn-secondary" onclick="goToStep1()">← পূর্ববর্তী ধাপ</button>
+                <button type="submit" class="btn-primary" style="margin-top: 0;">রেজিস্ট্রেশন সম্পন্ন করুন</button>
             </div>
         </div>
-
-        <div class="form-group">
-            <label>সন্তান (Children)</label>
-            <div id="childrenContainer"></div>
-            <button type="button" class="btn-add" onclick="addChild()">+ সন্তান যোগ করুন</button>
-        </div>
-
-        <div class="form-group">
-            <label for="extraPerformance">এক্সট্রা পারফরম্যান্স (ঐচ্ছিক)</label>
-            <select id="extraPerformance">
-                <option value="">পারফরম্যান্স সিলেক্ট করুন</option>
-                <!-- অ্যাডমিন প্যানেল থেকে এই অপশনগুলো আসবে -->
-                <option value="Singing">গান</option>
-                <option value="Recitation">আবৃত্তি</option>
-                <option value="Dancing">নাচ</option>
-            </select>
-        </div>
-
-        <hr>
-
-        <h4>পেমেন্ট ইনফরমেশন</h4>
-        <div class="form-group">
-            <label>মার্চেন্ট নম্বরসমূহ:</label>
-            <p style="background: #eee; padding: 10px; border-radius: 4px;">
-                বিকাশ: 017XXXXXX89<br>
-                নগদ: 018YYYYYY90
-            </p>
-        </div>
-
-        <div class="form-group">
-            <label for="paymentMethod">পেমেন্ট মেথড</label>
-            <select id="paymentMethod" required>
-                <option value="">মেথড সিলেক্ট করুন</option>
-                <option value="Bkash">বিকাশ</option>
-                <option value="Nagad">নগদ</option>
-            </select>
-        </div>
-
-        <div class="form-group">
-            <label for="transactionId">ট্রানজেকশন আইডি</label>
-            <input type="text" id="transactionId" required placeholder="সঠিক ট্রানজেকশন আইডি দিন">
-        </div>
-
-        <button type="submit">রেজিস্ট্রেশন সম্পন্ন করুন</button>
     </form>
 
-    <div id="registrationOutput"></div>
+    <!-- SUCCESS MESSAGE -->
+    <div id="successScreen" class="success-box hidden">
+        <h2>অভিনন্দন! রেজিস্ট্রেশন সম্পন্ন হয়েছে।</h2>
+        <p id="successDetails" style="margin: 15px 0; line-height: 1.6; color: #334155;"></p>
+        <button type="button" class="btn-primary" onclick="location.reload()">নতুন রেজিস্ট্রেশন করুন</button>
+    </div>
 </div>
 
 <script>
-    let childCount = 0;
+    // ফি নির্ধারণ (আপনার প্রয়োজন অনুযায়ী পরিবর্তন করতে পারেন)
+    const FEE_APPLICANT = 1000;
+    const FEE_SPOUSE = 800;
+    const FEE_CHILD = 500;
 
+    // স্বামী/স্ত্রীর ইনপুট ফিল্ড দেখানো বা লুকানো
     function toggleSpouseField() {
-        const checkBox = document.getElementById("hasSpouse");
-        const spouseField = document.getElementById("spouseField");
-        spouseField.style.display = checkBox.checked ? "block" : "none";
+        const isChecked = document.getElementById('hasSpouse').checked;
+        const container = document.getElementById('spouseFieldContainer');
+        const spouseInput = document.getElementById('spouseName');
+        
+        if (isChecked) {
+            container.classList.remove('hidden');
+        } else {
+            container.classList.add('hidden');
+            spouseInput.value = '';
+        }
     }
 
-    function addChild() {
-        childCount++;
-        const container = document.getElementById("childrenContainer");
-        const div = document.createElement("div");
-        div.className = "dynamic-row";
-        div.id = `childRow_${childCount}`;
-        div.innerHTML = `
-            <label>সন্তান ${childCount}-এর বয়স:</label>
-            <input type="number" placeholder="বয়স লিখুন" required style="margin-bottom:10px;">
-            <button type="button" class="btn-remove" onclick="removeChild(${childCount})">বাদ দিন</button>
+    // ডাইনামিকভাবে সন্তান যোগ করার ফাংশন
+    function addChildField() {
+        const container = document.getElementById('childrenContainer');
+        const row = document.createElement('div');
+        row.className = 'child-row';
+        
+        row.innerHTML = `
+            <input type="text" class="child-name" placeholder="সন্তানের নাম" required>
+            <input type="number" class="child-age" placeholder="বয়স (বছর)" min="0" max="25" required>
+            <button type="button" class="btn-remove" title="বাদ দিন" onclick="removeChildField(this)">✕</button>
         `;
-        container.appendChild(div);
+        
+        container.appendChild(row);
     }
 
-    function removeChild(id) {
-        const row = document.getElementById(`childRow_${id}`);
-        row.parentNode.removeChild(row);
+    // নির্দিষ্ট সন্তানের রো মুছে ফেলার ফাংশন
+    function removeChildField(buttonElement) {
+        const row = buttonElement.closest('.child-row');
+        if (row) {
+            row.remove();
+        }
     }
 
-    document.getElementById("registrationForm").addEventListener("submit", function(e) {
-        e.preventDefault();
+    // ধাপ ১ থেকে ধাপ ২-এ যাওয়া এবং ফি হিসাব করা
+    function goToStep2() {
+        const school = document.getElementById('school').value.trim();
+        const name = document.getElementById('applicantName').value.trim();
+        const mobile = document.getElementById('mobile').value.trim();
+        const blood = document.getElementById('bloodGroup').value.trim();
+        const tshirt = document.getElementById('tshirt').value.trim();
+        const hasSpouse = document.getElementById('hasSpouse').checked;
+        const spouseName = document.getElementById('spouseName').value.trim();
+        const errorMsg = document.getElementById('step1Error');
 
-        // পেমেন্ট ভেরিফিকেশন সিমুলেশন (প্রকৃত অ্যাপে এটি ব্যাকএন্ড এপিআই কল করবে)
-        const txId = document.getElementById("transactionId").value;
-        const isPaymentValid = txId.startsWith("TXN"); // উদাহরণস্বরূপ TXN দিয়ে শুরু হলে ভ্যালিড
-
-        if (!isPaymentValid) {
-            alert("দুঃখিত, ট্রানজেকশন আইডিটি সঠিক নয়। অনুগ্রহ করে পুনরায় চেষ্টা করুন। (টেস্টের জন্য TXN দিয়ে শুরু হওয়া আইডি দিন)");
+        // সাধারণ ভ্যালিডেশন
+        if (!school || !name || !mobile || !blood || !tshirt) {
+            errorMsg.textContent = "অনুগ্রহ করে স্কুল, নাম, মোবাইল, রক্তের গ্রুপ এবং টি-শার্ট সাইজ পূরণ করুন।";
+            errorMsg.style.display = 'block';
             return;
         }
 
-        // রেজিস্ট্রেশন নম্বর জেনারেশন (০৯১১০০০০১ ফরম্যাট)
-        const uniqueNumber = Math.floor(10000 + Math.random() * 90000);
-        const registrationNumber = "0911" + uniqueNumber;
+        if (hasSpouse && !spouseName) {
+            errorMsg.textContent = "অনুগ্রহ করে স্বামী বা স্ত্রীর নাম লিখুন।";
+            errorMsg.style.display = 'block';
+            return;
+        }
 
-        const outputDiv = document.getElementById("registrationOutput");
-        outputDiv.style.display = "block";
-        outputDiv.innerHTML = `অভিনন্দন! আপনার রেজিস্ট্রেশন সফল হয়েছে।<br>আপনার রেজিস্ট্রেশন নম্বর: ${registrationNumber}`;
+        // সন্তানদের ফিল্ড চেক করা
+        const childRows = document.querySelectorAll('.child-row');
+        for (let row of childRows) {
+            const cName = row.querySelector('.child-name').value.trim();
+            const cAge = row.querySelector('.child-age').value.trim();
+            if (!cName || cAge === '') {
+                errorMsg.textContent = "যোগ করা প্রতিটি সন্তানের নাম ও বয়স লিখুন, অথবা অপ্রয়োজনীয় ঘরটি ✕ চেপে বাদ দিন।";
+                errorMsg.style.display = 'block';
+                return;
+            }
+        }
+
+        errorMsg.style.display = 'none';
+
+        // ফি হিসাব আপডেট
+        let total = FEE_APPLICANT;
+        let breakdownHTML = `<div class="summary-line"><span>আবেদনকারী (১ জন):</span><span>${FEE_APPLICANT} টাকা</span></div>`;
+
+        if (hasSpouse) {
+            total += FEE_SPOUSE;
+            breakdownHTML += `<div class="summary-line"><span>স্বামী/স্ত্রী (১ জন):</span><span>${FEE_SPOUSE} টাকা</span></div>`;
+        }
+
+        const childCount = childRows.length;
+        if (childCount > 0) {
+            const childrenTotal = childCount * FEE_CHILD;
+            total += childrenTotal;
+            breakdownHTML += `<div class="summary-line"><span>সন্তান (${childCount} জন × ${FEE_CHILD}):</span><span>${childrenTotal} টাকা</span></div>`;
+        }
+
+        document.getElementById('feeBreakdown').innerHTML = breakdownHTML;
+        document.getElementById('totalAmountText').textContent = `${total} টাকা`;
+
+        // ধাপ পরিবর্তন
+        document.getElementById('step1').classList.add('hidden');
+        document.getElementById('step2').classList.remove('hidden');
+        document.getElementById('badge1').classList.remove('active');
+        document.getElementById('badge2').classList.add('active');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // ধাপ ২ থেকে ধাপ ১-এ ফিরে যাওয়া (তথ্য অটুট থাকবে)
+    function goToStep1() {
+        document.getElementById('step2').classList.add('hidden');
+        document.getElementById('step1').classList.remove('hidden');
+        document.getElementById('badge2').classList.remove('active');
+        document.getElementById('badge1').classList.add('active');
+    }
+
+    // ফর্ম সাবমিট হ্যান্ডলার
+    document.getElementById('reunionForm').addEventListener('submit', function(e) {
+        e.preventDefault();
         
-        // ফর্ম রিসেট
-        document.getElementById("registrationForm").reset();
-        document.getElementById("spouseField").style.display = "none";
-        document.getElementById("childrenContainer").innerHTML = "";
+        const sender = document.getElementById('senderNumber').value.trim();
+        const trxId = document.getElementById('trxId').value.trim().toUpperCase();
+        const errorMsg = document.getElementById('step2Error');
+
+        if (sender.length < 11 || trxId.length < 6) {
+            errorMsg.style.display = 'block';
+            return;
+        }
+
+        errorMsg.style.display = 'none';
+
+        // সংগৃহীত ডেটা অবজেক্ট (পরবর্তীতে Firebase বা Google Sheet-এ পাঠানোর জন্য প্রস্তুত)
+        const children = [];
+        document.querySelectorAll('.child-row').forEach(row => {
+            children.push({
+                name: row.querySelector('.child-name').value.trim(),
+                age: row.querySelector('.child-age').value.trim()
+            });
+        });
+
+        const registrationData = {
+            school: document.getElementById('school').value,
+            applicantName: document.getElementById('applicantName').value.trim(),
+            mobile: document.getElementById('mobile').value.trim(),
+            bloodGroup: document.getElementById('bloodGroup').value,
+            tshirt: document.getElementById('tshirt').value,
+            spouse: document.getElementById('hasSpouse').checked ? document.getElementById('spouseName').value.trim() : null,
+            children: children,
+            totalAmount: document.getElementById('totalAmountText').textContent,
+            bkashSender: sender,
+            trxId: trxId
+        };
+
+        console.log("Submitted Data:", registrationData);
+
+        // কনফার্মেশন স্ক্রিন দেখানো
+        document.getElementById('reunionForm').classList.add('hidden');
+        document.getElementById('stepIndicator').classList.add('hidden');
+        document.getElementById('successScreen').classList.remove('hidden');
+        document.getElementById('successDetails').innerHTML = `
+            ধন্যবাদ, <strong>${registrationData.applicantName}</strong>!<br>
+            আপনার ট্রানজেকশন আইডি <strong>${trxId}</strong> (মোট: ${registrationData.totalAmount}) সফলভাবে জমা হয়েছে।
+        `;
     });
 </script>
 
