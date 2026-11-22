@@ -75,8 +75,35 @@
             margin-bottom: 24px;
         }
 
+        .topbar-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
         .topbar h1 {
             font-size: 20px;
+        }
+
+        .cloud-badge {
+            padding: 5px 12px;
+            border-radius: 999px;
+            font-size: 13px;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .cloud-badge.connected {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .cloud-badge.disconnected {
+            background: #fee2e2;
+            color: #991b1b;
         }
 
         .topbar-actions {
@@ -338,7 +365,10 @@
 <!-- মূল অ্যাডমিন প্যানেল -->
 <div id="adminDashboard" class="container hidden">
     <div class="topbar">
-        <h1>অ্যাডমিন প্যানেল - ঈদ পুনর্মিলনী ২০২৭</h1>
+        <div class="topbar-left">
+            <h1>অ্যাডমিন প্যানেল - ঈদ পুনর্মিলনী ২০২৭</h1>
+            <span id="cloudStatusBadge" class="cloud-badge disconnected">☁️ Not Connected</span>
+        </div>
         <div class="topbar-actions">
             <a href="index.html" target="_blank" class="btn-link">রেজিস্ট্রেশন ফর্ম দেখুন ↗</a>
             <button type="button" class="btn-logout" onclick="logoutAdmin()">লগআউট</button>
@@ -346,6 +376,41 @@
     </div>
 
     <div id="statusToast" class="status-toast"></div>
+
+    <!-- Firebase Config কার্ড -->
+    <div class="card" style="margin-bottom: 20px;">
+        <h2>Firebase Database Config (Firestore)</h2>
+        <div class="grid" style="margin-bottom: 10px;">
+            <div class="form-group" style="margin-bottom: 0;">
+                <label for="fbApiKey">apiKey *</label>
+                <input type="text" id="fbApiKey" placeholder="AIzaSy...">
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+                <label for="fbAuthDomain">authDomain</label>
+                <input type="text" id="fbAuthDomain" placeholder="reunion-registration-911.firebaseapp.com">
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+                <label for="fbProjectId">projectId *</label>
+                <input type="text" id="fbProjectId" placeholder="reunion-registration-911">
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+                <label for="fbStorageBucket">storageBucket</label>
+                <input type="text" id="fbStorageBucket" placeholder="reunion-registration-911.firebasestorage.app">
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+                <label for="fbMessagingSenderId">messagingSenderId</label>
+                <input type="text" id="fbMessagingSenderId" placeholder="1234567890">
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+                <label for="fbAppId">appId *</label>
+                <input type="text" id="fbAppId" placeholder="1:123456:web:abcdef">
+            </div>
+        </div>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <button type="button" class="btn-add" onclick="connectFirebaseFromInputs()">Connect & Save Config</button>
+            <button type="button" class="btn-reset" onclick="disconnectFirebase()">Disconnect</button>
+        </div>
+    </div>
 
     <!-- পেমেন্ট ও নিরাপত্তা সেটিংস কার্ড -->
     <div class="card" style="margin-bottom: 20px;">
@@ -384,7 +449,7 @@
                 <input type="number" id="feeChildInput" min="0" step="10">
             </div>
             <div class="form-group" style="margin-bottom: 0;">
-                <label for="freeChildMaxAgeInput">ফ্রি সন্তানের সর্বোচ্চ বয়স (বছর)</label>
+                <label for="freeChildMaxAgeInput">ফ্রি সন্তানের সর্বোচ্চ বয়স (বছর)</label>
                 <input type="number" id="freeChildMaxAgeInput" min="0" max="15" placeholder="যেমন: 5 (৫ বছর বা কম ফ্রি)">
             </div>
         </div>
@@ -429,11 +494,11 @@
         <button type="button" class="btn-save" onclick="saveAllSettings()">✓ Save Changes (সব তথ্য সেভ করুন)</button>
     </div>
 
-    <!-- জমা হওয়া রেজিস্ট্রেশন তালিকা (নমুনা ফাইলের কলাম ক্রমে + সন্তানদের নাম ও বয়সসহ) -->
+    <!-- জমা হওয়া রেজিস্ট্রেশন তালিকা -->
     <div class="card">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
             <h2 style="margin-bottom: 0; border-bottom: none; padding-bottom: 0;">
-                জমা হওয়া রেজিস্ট্রেশন সমূহ <span id="regCountBadge" class="badge-count">0</span>
+                জমা হওয়া রেজিস্ট্রেশন সমূহ <span id="regCountBadge" class="badge-count">0</span>
             </h2>
             <button type="button" class="btn-add" onclick="exportRegistrationsCSV()">CSV ডাউনলোড করুন</button>
         </div>
@@ -448,7 +513,7 @@
                         <th>Blood Group</th>
                         <th>TShirt Size</th>
                         <th>Spouse Name</th>
-                        <th>Children (নাম ও বয়স)</th>
+                        <th>Children (নাম ও বয়স)</th>
                         <th>Total Amount</th>
                         <th>Sender Number</th>
                         <th>TrxID</th>
@@ -457,14 +522,18 @@
                     </tr>
                 </thead>
                 <tbody id="registrationsTableBody">
-                    <tr><td colspan="13" style="text-align: center; color: #64748b;">এখনো কোনো রেজিস্ট্রেশন জমা হয়নি।</td></tr>
+                    <tr><td colspan="13" style="text-align: center; color: #64748b;">এখনো কোনো রেজিস্ট্রেশন জমা হয়নি।</td></tr>
                 </tbody>
             </table>
         </div>
     </div>
 </div>
 
-<script>
+<script type="module">
+    import { initializeApp, getApps, deleteApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getFirestore, doc, setDoc, getDoc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    const FB_CONFIG_KEY = 'reunion_2027_firebase_config';
     const SETTINGS_KEY = 'reunion_2027_admin_settings';
     const REGISTRATIONS_KEY = 'reunion_2027_registrations_list';
     const AUTH_SESSION_KEY = 'reunion_2027_admin_authenticated';
@@ -496,6 +565,23 @@
 
     let currentSettings = {};
     let editingState = { key: null, index: null };
+    let dbInstance = null;
+    let isCloudConnected = false;
+    let unsubscribeRegistrations = null;
+    let cloudRegistrations = [];
+
+    function updateCloudBadge(connected) {
+        isCloudConnected = connected;
+        const badge = document.getElementById('cloudStatusBadge');
+        if (!badge) return;
+        if (connected) {
+            badge.textContent = "☁️ Cloud Connected";
+            badge.className = "cloud-badge connected";
+        } else {
+            badge.textContent = "☁️ Not Connected";
+            badge.className = "cloud-badge disconnected";
+        }
+    }
 
     function getSafeSettings() {
         try {
@@ -516,7 +602,7 @@
         }
     }
 
-    function getSafeRegistrations() {
+    function getSafeLocalRegistrations() {
         try {
             const raw = localStorage.getItem(REGISTRATIONS_KEY);
             const list = raw ? JSON.parse(raw) : [];
@@ -524,6 +610,10 @@
         } catch (err) {
             return [];
         }
+    }
+
+    function getActiveRegistrationsList() {
+        return isCloudConnected ? cloudRegistrations : getSafeLocalRegistrations();
     }
 
     function getChildrenCountValue(reg) {
@@ -541,6 +631,129 @@
         return `${count} জন — ${details}`;
     }
 
+    function fillConfigInputs(cfg) {
+        document.getElementById('fbApiKey').value = cfg?.apiKey || '';
+        document.getElementById('fbAuthDomain').value = cfg?.authDomain || '';
+        document.getElementById('fbProjectId').value = cfg?.projectId || '';
+        document.getElementById('fbStorageBucket').value = cfg?.storageBucket || '';
+        document.getElementById('fbMessagingSenderId').value = cfg?.messagingSenderId || '';
+        document.getElementById('fbAppId').value = cfg?.appId || '';
+    }
+
+    function readConfigInputs() {
+        return {
+            apiKey: document.getElementById('fbApiKey').value.trim(),
+            authDomain: document.getElementById('fbAuthDomain').value.trim(),
+            projectId: document.getElementById('fbProjectId').value.trim(),
+            storageBucket: document.getElementById('fbStorageBucket').value.trim(),
+            messagingSenderId: document.getElementById('fbMessagingSenderId').value.trim(),
+            appId: document.getElementById('fbAppId').value.trim()
+        };
+    }
+
+    function stopRegistrationsListener() {
+        if (typeof unsubscribeRegistrations === 'function') {
+            unsubscribeRegistrations();
+            unsubscribeRegistrations = null;
+        }
+        cloudRegistrations = [];
+    }
+
+    function startRegistrationsListener(db) {
+        stopRegistrationsListener();
+        unsubscribeRegistrations = onSnapshot(
+            collection(db, "registrations"),
+            (snapshot) => {
+                const docs = snapshot.docs.map(d => ({ _docId: d.id, ...d.data() }));
+                docs.sort((a, b) => Number(a.registrationNumber || 0) - Number(b.registrationNumber || 0));
+                cloudRegistrations = docs;
+                updateCloudBadge(true);
+                renderRegistrationsTable();
+            },
+            (err) => {
+                console.error("Firestore registrations listener error:", err);
+                updateCloudBadge(false);
+                renderRegistrationsTable();
+            }
+        );
+    }
+
+    async function initFirebaseConnection(cfg, silent = false) {
+        if (!cfg || !cfg.apiKey || !cfg.projectId || !cfg.appId) {
+            updateCloudBadge(false);
+            dbInstance = null;
+            stopRegistrationsListener();
+            renderRegistrationsTable();
+            return false;
+        }
+
+        try {
+            stopRegistrationsListener();
+            for (const app of getApps()) {
+                await deleteApp(app);
+            }
+            const app = initializeApp(cfg);
+            const db = getFirestore(app);
+            const settingsSnap = await getDoc(doc(db, "reunion_2027_config", "settings"));
+
+            dbInstance = db;
+            updateCloudBadge(true);
+
+            if (settingsSnap.exists()) {
+                const cloudData = settingsSnap.data();
+                currentSettings = {
+                    ...JSON.parse(JSON.stringify(DEFAULT_SETTINGS)),
+                    ...cloudData,
+                    fees: {
+                        ...DEFAULT_SETTINGS.fees,
+                        ...(cloudData.fees || {})
+                    }
+                };
+                localStorage.setItem(SETTINGS_KEY, JSON.stringify(currentSettings));
+                populateSettingsInputs();
+                renderAllLists();
+            }
+
+            startRegistrationsListener(db);
+            if (!silent) {
+                showToast("☁️ Cloud Connected! Firebase Firestore সফলভাবে যুক্ত হয়েছে।", "#dcfce7", "#166534");
+            }
+            return true;
+        } catch (err) {
+            console.error("Firebase connection failed:", err);
+            dbInstance = null;
+            updateCloudBadge(false);
+            renderRegistrationsTable();
+            if (!silent) {
+                showToast("☁️ Not Connected — Firebase Config বা Firestore Rules চেক করুন।", "#fee2e2", "#991b1b");
+            }
+            return false;
+        }
+    }
+
+    window.connectFirebaseFromInputs = async function () {
+        const cfg = readConfigInputs();
+        if (!cfg.apiKey || !cfg.projectId || !cfg.appId) {
+            updateCloudBadge(false);
+            showToast("অনুগ্রহ করে apiKey, projectId এবং appId দিন।", "#fee2e2", "#991b1b");
+            return;
+        }
+        localStorage.setItem(FB_CONFIG_KEY, JSON.stringify(cfg));
+        await initFirebaseConnection(cfg, false);
+    };
+
+    window.disconnectFirebase = async function () {
+        localStorage.removeItem(FB_CONFIG_KEY);
+        stopRegistrationsListener();
+        for (const app of getApps()) {
+            await deleteApp(app);
+        }
+        dbInstance = null;
+        updateCloudBadge(false);
+        renderRegistrationsTable();
+        showToast("☁️ Not Connected — Cloud সংযোগ বিচ্ছিন্ন করা হয়েছে।", "#fef3c7", "#92400e");
+    };
+
     // Login Handling
     document.getElementById('loginForm').addEventListener('submit', function(e) {
         e.preventDefault();
@@ -554,26 +767,34 @@
         }
     });
 
-    function unlockDashboard() {
+    async function unlockDashboard() {
         document.getElementById('loginScreen').classList.add('hidden');
         document.getElementById('adminDashboard').classList.remove('hidden');
         loadSettingsToMemory();
         renderRegistrationsTable();
+
+        try {
+            const savedCfg = JSON.parse(localStorage.getItem(FB_CONFIG_KEY) || 'null');
+            if (savedCfg) {
+                fillConfigInputs(savedCfg);
+                await initFirebaseConnection(savedCfg, true);
+            } else {
+                updateCloudBadge(false);
+            }
+        } catch {
+            updateCloudBadge(false);
+        }
     }
 
-    function logoutAdmin() {
+    window.logoutAdmin = function () {
         sessionStorage.removeItem(AUTH_SESSION_KEY);
+        stopRegistrationsListener();
         document.getElementById('adminDashboard').classList.add('hidden');
         document.getElementById('loginScreen').classList.remove('hidden');
         document.getElementById('adminPinInput').value = '';
-    }
+    };
 
-    function loadSettingsToMemory() {
-        currentSettings = getSafeSettings();
-        if (!localStorage.getItem(SETTINGS_KEY)) {
-            localStorage.setItem(SETTINGS_KEY, JSON.stringify(currentSettings));
-        }
-
+    function populateSettingsInputs() {
         document.getElementById('bkashNumberInput').value = currentSettings.bkashNumber || "";
         document.getElementById('paymentNoteInput').value = currentSettings.paymentNote || "";
         document.getElementById('newAdminPinInput').value = currentSettings.adminPin || "2027";
@@ -582,7 +803,14 @@
         document.getElementById('feeSpouseInput').value = currentSettings.fees.spouse;
         document.getElementById('feeChildInput').value = currentSettings.fees.child;
         document.getElementById('freeChildMaxAgeInput').value = currentSettings.fees.freeChildMaxAge;
+    }
 
+    function loadSettingsToMemory() {
+        currentSettings = getSafeSettings();
+        if (!localStorage.getItem(SETTINGS_KEY)) {
+            localStorage.setItem(SETTINGS_KEY, JSON.stringify(currentSettings));
+        }
+        populateSettingsInputs();
         renderAllLists();
     }
 
@@ -658,7 +886,7 @@
         });
     }
 
-    function addItem(key, inputId) {
+    window.addItem = function (key, inputId) {
         const input = document.getElementById(inputId);
         const val = input.value.trim();
         if (!val) return showToast("অনুগ্রহ করে কিছু লিখুন!", "#fee2e2", "#991b1b");
@@ -672,7 +900,7 @@
         renderList(key);
         input.value = '';
         showToast("তালিকায় যুক্ত হয়েছে। চূড়ান্ত করতে নিচের 'Save Changes' বাটনে ক্লিক করুন।", "#fef3c7", "#92400e");
-    }
+    };
 
     function startInlineEdit(key, index) {
         editingState = { key, index };
@@ -696,7 +924,7 @@
 
     function deleteItem(key, index) {
         if (currentSettings[key].length <= 1) {
-            return showToast("তালিকায় অন্তত ১টি অপশন থাকতে হবে!", "#fee2e2", "#991b1b");
+            return showToast("তালিকায় অন্তত ১টি অপশন থাকতে হবে!", "#fee2e2", "#991b1b");
         }
         if (confirm(`আপনি কি নিশ্চিতভাবে "${currentSettings[key][index]}" মুছে ফেলতে চান?`)) {
             currentSettings[key].splice(index, 1);
@@ -706,7 +934,7 @@
         }
     }
 
-    function saveAllSettings() {
+    window.saveAllSettings = async function () {
         const bkash = document.getElementById('bkashNumberInput').value.trim();
         const note = document.getElementById('paymentNoteInput').value.trim();
         const newPin = document.getElementById('newAdminPinInput').value.trim();
@@ -733,7 +961,7 @@
         }
 
         if (isNaN(freeChildMaxAge) || freeChildMaxAge < 0 || freeChildMaxAge > 15) {
-            return showToast("ফ্রি সন্তানের বয়স ০ থেকে ১৫ বছরের মধ্যে হতে হবে!", "#fee2e2", "#991b1b");
+            return showToast("ফ্রি সন্তানের বয়স ০ থেকে ১৫ বছরের মধ্যে হতে হবে!", "#fee2e2", "#991b1b");
         }
 
         currentSettings.bkashNumber = bkash;
@@ -747,18 +975,30 @@
         };
 
         localStorage.setItem(SETTINGS_KEY, JSON.stringify(currentSettings));
-        showToast("✓ সব তথ্য সফলভাবে সেভ হয়েছে! খোলা থাকা রেজিস্ট্রেশন ফর্মেও স্বয়ংক্রিয়ভাবে আপডেট হয়ে যাবে।", "#dcfce7", "#166534");
-    }
 
-    function resetDefaults() {
+        if (dbInstance && isCloudConnected) {
+            try {
+                await setDoc(doc(dbInstance, "reunion_2027_config", "settings"), currentSettings, { merge: true });
+                showToast("✓ সব তথ্য লোকাল ও Firebase Cloud-এ সফলভাবে সেভ হয়েছে!", "#dcfce7", "#166534");
+            } catch (err) {
+                console.error(err);
+                updateCloudBadge(false);
+                showToast("লোকালি সেভ হয়েছে, কিন্তু Cloud-এ সেভ করতে সমস্যা হয়েছে।", "#fee2e2", "#991b1b");
+            }
+        } else {
+            showToast("✓ সব তথ্য লোকালি সেভ হয়েছে (☁️ Not Connected)।", "#dcfce7", "#166534");
+        }
+    };
+
+    window.resetDefaults = function () {
         if (confirm("সব তথ্য কি আগের ডিফল্ট অবস্থায় ফিরিয়ে নিতে চান?")) {
             currentSettings = JSON.parse(JSON.stringify(DEFAULT_SETTINGS));
             localStorage.setItem(SETTINGS_KEY, JSON.stringify(currentSettings));
             editingState = { key: null, index: null };
             loadSettingsToMemory();
-            showToast("ডিফল্ট সেটিংস রিসেট ও সেভ করা হয়েছে।", "#dcfce7", "#166534");
+            showToast("ডিফল্ট সেটিংস রিসেট করা হয়েছে। Cloud-এ পাঠাতে 'Save Changes' চাপুন।", "#dcfce7", "#166534");
         }
-    }
+    };
 
     function showToast(msg, bg, color) {
         const toast = document.getElementById('statusToast');
@@ -771,7 +1011,7 @@
     }
 
     function renderRegistrationsTable() {
-        const list = getSafeRegistrations();
+        const list = getActiveRegistrationsList();
         const tbody = document.getElementById('registrationsTableBody');
         document.getElementById('regCountBadge').textContent = list.length;
         tbody.innerHTML = '';
@@ -782,7 +1022,9 @@
             td.colSpan = 13;
             td.style.textAlign = 'center';
             td.style.color = '#64748b';
-            td.textContent = 'এখনো কোনো রেজিস্ট্রেশন জমা হয়নি।';
+            td.textContent = isCloudConnected
+                ? 'এখনো কোনো রেজিস্ট্রেশন জমা হয়নি।'
+                : '☁️ Not Connected — লোকাল বা Firebase কানেক্ট করলে রেজিস্ট্রেশন দেখা যাবে।';
             tr.appendChild(td);
             tbody.appendChild(tr);
             return;
@@ -818,9 +1060,8 @@
         });
     }
 
-    // CSV ডাউনলোডে নমুনা ফাইলের কলাম ও Children কলামে শুধু সন্তানের সংখ্যা (0, 1, 2...)
-    function exportRegistrationsCSV() {
-        const list = getSafeRegistrations();
+    window.exportRegistrationsCSV = function () {
+        const list = getActiveRegistrationsList();
         if (list.length === 0) {
             return showToast("ডাউনলোড করার মতো কোনো রেজিস্ট্রেশন তথ্য নেই।", "#fef3c7", "#92400e");
         }
@@ -869,10 +1110,10 @@
         a.download = 'eid_reunion_2027_registrations.csv';
         a.click();
         URL.revokeObjectURL(url);
-    }
+    };
 
     window.addEventListener('storage', function(e) {
-        if (e.key === REGISTRATIONS_KEY && sessionStorage.getItem(AUTH_SESSION_KEY) === 'true') {
+        if (e.key === REGISTRATIONS_KEY && !isCloudConnected && sessionStorage.getItem(AUTH_SESSION_KEY) === 'true') {
             renderRegistrationsTable();
         }
     });
