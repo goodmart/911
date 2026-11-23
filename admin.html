@@ -212,6 +212,22 @@
             flex-shrink: 0;
         }
 
+        .uid-box {
+            font-family: monospace;
+            background: #f1f5f9;
+            border: 1px dashed #94a3b8;
+            padding: 6px 10px;
+            border-radius: 6px;
+            word-break: break-all;
+            font-size: 13px;
+        }
+
+        .role-note {
+            font-size: 13px;
+            color: #475569;
+            margin: 8px 0 12px;
+        }
+
         .btn-add:hover {
             background: var(--primary-hover);
         }
@@ -465,6 +481,42 @@
         <div style="display: flex; gap: 10px; flex-wrap: wrap;">
             <button type="button" class="btn-add" onclick="connectFirebaseFromInputs()">Connect & Save Config</button>
             <button type="button" class="btn-reset" onclick="disconnectFirebase()">Disconnect</button>
+        </div>
+    </div>
+
+    <!-- অ্যাডমিন / ভেরিফায়ার UID ম্যানেজমেন্ট -->
+    <div class="card" style="margin-bottom: 20px;">
+        <h2>অ্যাক্সেস নিয়ন্ত্রণ (Admin ও Verifier UID)</h2>
+        <div class="form-group" style="margin-bottom: 8px;">
+            <label>আপনার UID (এখন যে অ্যাকাউন্টে লগইন আছেন)</label>
+            <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                <span id="myUidBox" class="uid-box">-</span>
+                <button type="button" class="btn-add" onclick="copyMyUid()">কপি</button>
+            </div>
+        </div>
+        <div id="rolesStatus" class="role-note">রোল লোড হচ্ছে...</div>
+        <button type="button" id="claimOwnerBtn" class="btn-save hidden" onclick="claimFirstAdmin()">আমাকে প্রথম অ্যাডমিন হিসেবে সেট করুন</button>
+
+        <div id="rolesEditor" class="grid hidden" style="margin-bottom: 0;">
+            <div>
+                <label>Admin UID (admin.html এ সেটিংস সেভ, রেজিস্ট্রেশন সংশোধন/মুছতে পারবে)</label>
+                <div class="add-group">
+                    <input type="text" id="adminUidInput" placeholder="Admin UID পেস্ট করুন">
+                    <button type="button" class="btn-add" onclick="addRoleUid('adminUids', 'adminUidInput')">যোগ</button>
+                </div>
+                <ul id="adminUidsList"></ul>
+            </div>
+            <div>
+                <label>Verifier UID (Android SMS অ্যাপ, পেমেন্ট verify করতে পারবে)</label>
+                <div class="add-group">
+                    <input type="text" id="verifierUidInput" placeholder="Verifier UID পেস্ট করুন">
+                    <button type="button" class="btn-add" onclick="addRoleUid('verifierUids', 'verifierUidInput')">যোগ</button>
+                </div>
+                <ul id="verifierUidsList"></ul>
+            </div>
+        </div>
+        <div id="rolesSaveBar" class="hidden" style="margin-top: 12px;">
+            <button type="button" class="btn-save" onclick="saveRoles()">✓ UID তালিকা সেভ করুন</button>
         </div>
     </div>
 
@@ -905,6 +957,7 @@
         localStorage.setItem(FB_CONFIG_KEY, JSON.stringify(cfg));
         fillConfigInputs(cfg);
         await initFirebaseConnection(cfg, false);
+        await loadRoles();
     };
 
     window.disconnectFirebase = async function () {
@@ -973,7 +1026,167 @@
         } else {
             await initFirebaseConnection(cfg, true);
         }
+
+        await loadRoles();
     }
+
+    // ---------- Admin / Verifier UID (reunion_2027_roles/roles) ----------
+    let rolesData = null;   // { adminUids: [], verifierUids: [] } অথবা null (এখনো তৈরি হয়নি)
+
+    function rolesDocRef() {
+        return doc(dbInstance, "reunion_2027_roles", "roles");
+    }
+
+    function isValidUid(uid) {
+        return /^[A-Za-z0-9]{20,128}$/.test(uid);
+    }
+
+    async function loadRoles() {
+        const user = authInstance?.currentUser;
+        document.getElementById('myUidBox').textContent = user ? user.uid : '-';
+        const statusEl = document.getElementById('rolesStatus');
+        const claimBtn = document.getElementById('claimOwnerBtn');
+        const editor = document.getElementById('rolesEditor');
+        const saveBar = document.getElementById('rolesSaveBar');
+        claimBtn.classList.add('hidden');
+        editor.classList.add('hidden');
+        saveBar.classList.add('hidden');
+
+        if (!dbInstance || !user) {
+            statusEl.textContent = "Firebase কানেক্টেড নয়, তাই রোল দেখা যাচ্ছে না।";
+            return;
+        }
+        try {
+            const snap = await getDoc(rolesDocRef());
+            if (!snap.exists()) {
+                rolesData = null;
+                statusEl.textContent = "এখনো কোনো অ্যাডমিন সেট করা হয়নি। নিচের বাটনে চাপ দিয়ে নিজেকে প্রথম অ্যাডমিন বানান। (একবারই করা যায়)";
+                claimBtn.classList.remove('hidden');
+                return;
+            }
+            const d = snap.data() || {};
+            rolesData = {
+                adminUids: Array.isArray(d.adminUids) ? [...d.adminUids] : [],
+                verifierUids: Array.isArray(d.verifierUids) ? [...d.verifierUids] : []
+            };
+            const iAmAdmin = rolesData.adminUids.includes(user.uid);
+            if (iAmAdmin) {
+                statusEl.textContent = "✓ আপনি অ্যাডমিন। এখান থেকে UID যোগ/বাদ দিয়ে সেভ করুন।";
+                editor.classList.remove('hidden');
+                saveBar.classList.remove('hidden');
+                renderRoleLists();
+            } else {
+                statusEl.textContent = "⚠️ আপনার UID অ্যাডমিন তালিকায় নেই। সেটিংস সেভ করতে পারবেন না। একজন অ্যাডমিনকে উপরের UID পাঠিয়ে যোগ করতে বলুন।";
+            }
+        } catch (err) {
+            console.error("Roles load error:", err);
+            statusEl.textContent = `রোল লোড করা যায়নি (${err?.code || 'error'})। Firestore Rules ঠিকমতো Publish হয়েছে কিনা দেখুন।`;
+        }
+    }
+
+    function renderRoleLists() {
+        const myUid = authInstance?.currentUser?.uid;
+        [['adminUids', 'adminUidsList'], ['verifierUids', 'verifierUidsList']].forEach(([key, listId]) => {
+            const ul = document.getElementById(listId);
+            ul.innerHTML = '';
+            const arr = rolesData?.[key] || [];
+            if (arr.length === 0) {
+                const li = document.createElement('li');
+                li.textContent = "কোনো UID নেই";
+                ul.appendChild(li);
+                return;
+            }
+            arr.forEach((uid, idx) => {
+                const li = document.createElement('li');
+                const span = document.createElement('span');
+                span.className = 'uid-box';
+                span.textContent = uid + (uid === myUid ? "  (আপনি)" : "");
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'btn-reset';
+                btn.textContent = 'বাদ দিন';
+                btn.onclick = () => removeRoleUid(key, idx);
+                li.appendChild(span);
+                li.appendChild(btn);
+                ul.appendChild(li);
+            });
+        });
+    }
+
+    window.copyMyUid = async function () {
+        const uid = authInstance?.currentUser?.uid;
+        if (!uid) return;
+        try {
+            await navigator.clipboard.writeText(uid);
+            showToast("UID কপি হয়েছে।", "#dcfce7", "#166534");
+        } catch {
+            showToast("কপি করা যায়নি, হাতে সিলেক্ট করে কপি করুন।", "#fef3c7", "#92400e");
+        }
+    };
+
+    window.claimFirstAdmin = async function () {
+        const uid = authInstance?.currentUser?.uid;
+        if (!uid || !dbInstance) return;
+        try {
+            await setDoc(rolesDocRef(), { adminUids: [uid], verifierUids: [] });
+            showToast("✓ আপনি এখন প্রথম অ্যাডমিন।", "#dcfce7", "#166534");
+            await loadRoles();
+        } catch (err) {
+            console.error("Claim admin error:", err);
+            showToast(`অ্যাডমিন সেট করা যায়নি (${err?.code || 'error'})। হয়তো আগেই কেউ সেট করেছে।`, "#fee2e2", "#991b1b");
+            await loadRoles();
+        }
+    };
+
+    window.addRoleUid = function (key, inputId) {
+        if (!rolesData) return;
+        const input = document.getElementById(inputId);
+        const uid = input.value.trim();
+        if (!isValidUid(uid)) {
+            return showToast("সঠিক UID দিন (Firebase Authentication > Users থেকে কপি করুন)।", "#fee2e2", "#991b1b");
+        }
+        if (rolesData[key].includes(uid)) {
+            return showToast("এই UID আগেই তালিকায় আছে।", "#fef3c7", "#92400e");
+        }
+        rolesData[key].push(uid);
+        input.value = '';
+        renderRoleLists();
+        showToast("যোগ হয়েছে। চূড়ান্ত করতে 'UID তালিকা সেভ করুন' চাপুন।", "#fef3c7", "#92400e");
+    };
+
+    function removeRoleUid(key, idx) {
+        if (!rolesData) return;
+        const myUid = authInstance?.currentUser?.uid;
+        const uid = rolesData[key][idx];
+        if (key === 'adminUids' && rolesData.adminUids.length <= 1) {
+            return showToast("কমপক্ষে একজন অ্যাডমিন রাখতে হবে।", "#fee2e2", "#991b1b");
+        }
+        if (key === 'adminUids' && uid === myUid &&
+            !confirm("নিজেকে অ্যাডমিন থেকে বাদ দিলে আর এই প্যানেল থেকে কিছু সেভ করতে পারবেন না। নিশ্চিত?")) {
+            return;
+        }
+        rolesData[key].splice(idx, 1);
+        renderRoleLists();
+        showToast("বাদ দেওয়া হয়েছে। চূড়ান্ত করতে 'UID তালিকা সেভ করুন' চাপুন।", "#fef3c7", "#92400e");
+    }
+
+    window.saveRoles = async function () {
+        if (!rolesData || !dbInstance) return;
+        if (rolesData.adminUids.length === 0) {
+            return showToast("কমপক্ষে একজন অ্যাডমিন রাখতে হবে।", "#fee2e2", "#991b1b");
+        }
+        try {
+            await setDoc(rolesDocRef(), {
+                adminUids: rolesData.adminUids,
+                verifierUids: rolesData.verifierUids
+            });
+            showToast("✓ UID তালিকা সেভ হয়েছে।", "#dcfce7", "#166534");
+            await loadRoles();
+        } catch (err) {
+            console.error("Save roles error:", err);
+            showToast(`সেভ করা যায়নি (${err?.code || 'error'})।`, "#fee2e2", "#991b1b");
+        }
+    };
 
     function showLoginScreen() {
         stopRegistrationsListener();
