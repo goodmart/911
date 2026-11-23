@@ -564,12 +564,24 @@
         <h2>পেমেন্ট সেটিংস</h2>
         <div class="grid" style="margin-bottom: 0;">
             <div class="form-group" style="margin-bottom: 0;">
-                <label for="bkashNumberInput">বিকাশ / পেমেন্ট নম্বর (১১ ডিজিট) *</label>
+                <label for="bkashNumberInput">বিকাশ নম্বর (১১ ডিজিট) *</label>
                 <input type="tel" id="bkashNumberInput" maxlength="11" placeholder="01700000000" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
             </div>
             <div class="form-group" style="margin-bottom: 0;">
                 <label for="paymentNoteInput">পেমেন্ট নির্দেশনা / গেটওয়ে নোট *</label>
                 <input type="text" id="paymentNoteInput" placeholder="যেমন: পার্সোনাল নম্বরে Send Money করুন">
+            </div>
+        </div>
+    </div>
+
+    <!-- হোমপেজের সর্বশেষ রেজিস্ট্রেশন তালিকা -->
+    <div class="card" style="margin-bottom: 20px;">
+        <h2>হোমপেজে সর্বশেষ রেজিস্ট্রেশন তালিকা</h2>
+        <div class="grid" style="margin-bottom: 0;">
+            <div class="form-group" style="margin-bottom: 0;">
+                <label for="publicListCountInput">কতজনের তালিকা দেখাবে</label>
+                <input type="number" id="publicListCountInput" min="0" max="500" step="1" placeholder="7">
+                <div class="field-hint">যেমন: 7, 50, 100। 0 দিলে তালিকা দেখাবে না। সর্বোচ্চ 500।<br>পাবলিকলি শুধু Reg. No, নাম, স্কুল, টাকা, পেমেন্ট স্ট্যাটাস ও তারিখ দেখায়।</div>
             </div>
         </div>
     </div>
@@ -702,7 +714,7 @@
 <script type="module">
     import { initializeApp, getApps, deleteApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-    import { getFirestore, doc, setDoc, getDoc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { getFirestore, doc, setDoc, getDoc, getDocs, collection, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     const FB_CONFIG_KEY = 'reunion_2027_firebase_config';
     const SETTINGS_KEY = 'reunion_2027_admin_settings';
@@ -718,6 +730,7 @@
     };
 
     const DEFAULT_SETTINGS = {
+        publicListCount: 7,
         bkashNumber: "01700000000",
         paymentNote: "নিচের পার্সোনাল নম্বরে উল্লিখিত টাকা Send Money করে ট্রানজেকশন আইডি (TrxID) সংগ্রহ করুন:",
         footerCredit: {
@@ -908,6 +921,7 @@
                 cloudRegistrations = docs;
                 updateCloudBadge(true);
                 renderRegistrationsTable();
+                syncPublicRegistrations(db, docs);
             },
             (err) => {
                 console.error("Firestore registrations listener error:", err);
@@ -915,6 +929,56 @@
                 renderRegistrationsTable();
             }
         );
+    }
+
+    // ---------- হোমপেজের পাবলিক তালিকা (public_registrations) ----------
+    // প্রতিটি রেজিস্ট্রেশনের শুধু ৬টি তথ্য public_registrations/{একই id} এ রাখা হয়।
+    // পুরোনো রেজিস্ট্রেশন (এই ফিচারের আগের) বা স্ট্যাটাস বদলালে অ্যাডমিন লগইনে আপনাআপনি ঠিক হয়।
+    const PUBLIC_REG_COLLECTION = "public_registrations";
+    let publicSyncRunning = false;
+
+    function buildPublicSummary(reg) {
+        return {
+            registrationNumber: Number(reg.registrationNumber) || 0,
+            applicantName: String(reg.applicantName || ""),
+            school: String(reg.school || ""),
+            totalAmount: Number(reg.totalAmount) || 0,
+            paymentStatus: reg.paymentVerified === true ? "Verified" : "Pending"
+        };
+    }
+
+    let publicSyncPending = null;
+
+    async function syncPublicRegistrations(db, regs) {
+        if (!db) return;
+        if (publicSyncRunning) { publicSyncPending = regs; return; }
+        publicSyncRunning = true;
+        try {
+            const snap = await getDocs(collection(db, PUBLIC_REG_COLLECTION));
+            const existing = new Map(snap.docs.map(d => [d.id, d.data()]));
+            let written = 0;
+            for (const reg of regs) {
+                const want = buildPublicSummary(reg);
+                const have = existing.get(reg._docId);
+                const same = have && Object.keys(want).every(k => have[k] === want[k]) && have.createdAt;
+                if (same) continue;
+                const createdAt = (have && have.createdAt)
+                    || (reg.createdAt && typeof reg.createdAt.toDate === 'function' ? reg.createdAt : serverTimestamp());
+                await setDoc(doc(db, PUBLIC_REG_COLLECTION, reg._docId), { ...want, createdAt });
+                written++;
+            }
+            if (written) console.info(`public_registrations: ${written}টি আপডেট হয়েছে`);
+        } catch (err) {
+            // Verifier বা rules পুরোনো হলে এখানে আসতে পারে; অ্যাডমিন প্যানেল স্বাভাবিক চলবে
+            console.warn("public_registrations sync skipped:", err?.code || err);
+        } finally {
+            publicSyncRunning = false;
+            if (publicSyncPending) {
+                const next = publicSyncPending;
+                publicSyncPending = null;
+                syncPublicRegistrations(db, next);
+            }
+        }
     }
 
     async function syncSettingsFromCloud(db) {
@@ -1267,6 +1331,7 @@
 
     function populateSettingsInputs() {
         document.getElementById('bkashNumberInput').value = currentSettings.bkashNumber || "";
+        document.getElementById('publicListCountInput').value = currentSettings.publicListCount ?? DEFAULT_SETTINGS.publicListCount;
         document.getElementById('paymentNoteInput').value = currentSettings.paymentNote || "";
 
         document.getElementById('footerTextInput').value = currentSettings.footerCredit?.text || "";
@@ -1423,6 +1488,12 @@
         const feeSpouse = Number(document.getElementById('feeSpouseInput').value);
         const feeChild = Number(document.getElementById('feeChildInput').value);
         const freeChildMaxAge = Number(document.getElementById('freeChildMaxAgeInput').value);
+        const publicListRaw = document.getElementById('publicListCountInput').value.trim();
+        const publicListCount = publicListRaw === "" ? DEFAULT_SETTINGS.publicListCount : Number(publicListRaw);
+
+        if (!Number.isInteger(publicListCount) || publicListCount < 0 || publicListCount > 500) {
+            return showToast("হোমপেজ তালিকার সংখ্যা ০ থেকে ৫০০ এর মধ্যে পূর্ণসংখ্যা দিন!", "#fee2e2", "#991b1b");
+        }
 
         if (!/^01[3-9]\d{8}$/.test(bkash)) {
             return showToast("সঠিক ১১ ডিজিটের বিকাশ/মোবাইল নম্বর দিন (যেমন: 017XXXXXXXX)!", "#fee2e2", "#991b1b");
@@ -1445,6 +1516,7 @@
         }
 
         currentSettings.bkashNumber = bkash;
+        currentSettings.publicListCount = publicListCount;
         currentSettings.paymentNote = note;
         currentSettings.footerCredit = {
             text: footerText,

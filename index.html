@@ -315,6 +315,82 @@
             display: none;
         }
 
+        /* ---------- সর্বশেষ রেজিস্ট্রেশন (পাবলিক তালিকা) ---------- */
+        .latest-regs {
+            margin-top: 18px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            background: #ffffff;
+            overflow: hidden;
+        }
+
+        .latest-regs h3 {
+            font-size: 15px;
+            padding: 10px 12px;
+            background: #ecfdf5;
+            color: var(--primary);
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .latest-regs-scroll {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .latest-regs table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12.5px;
+        }
+
+        .latest-regs th,
+        .latest-regs td {
+            padding: 7px 8px;
+            text-align: left;
+            border-bottom: 1px solid #f1f5f9;
+            white-space: nowrap;
+        }
+
+        .latest-regs th {
+            background: #f8fafc;
+            color: #475569;
+            font-weight: 700;
+        }
+
+        .latest-regs td.wrap {
+            white-space: normal;
+            min-width: 110px;
+        }
+
+        .latest-regs tr:last-child td {
+            border-bottom: none;
+        }
+
+        .pay-status {
+            display: inline-block;
+            padding: 2px 7px;
+            border-radius: 10px;
+            font-size: 11.5px;
+            font-weight: 700;
+        }
+
+        .pay-status.ok {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .pay-status.pending {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .latest-regs-empty {
+            padding: 12px;
+            text-align: center;
+            font-size: 13px;
+            color: #64748b;
+        }
+
         .error-msg {
             color: var(--danger);
             font-size: 13px;
@@ -466,6 +542,28 @@
             <div class="page-footer-credit" data-credit-footer>
                 @Developed and Designed by Your Friend <a href="https://facebook.com" target="_blank" rel="noopener noreferrer">Al Helal</a>
             </div>
+
+            <!-- সর্বশেষ রেজিস্ট্রেশন: শুধু Reg. No, নাম, স্কুল, টাকা, পেমেন্ট স্ট্যাটাস, তারিখ -->
+            <!-- কতজন দেখাবে তা admin.html > ফর্ম ও পেমেন্ট সেটিংস থেকে ঠিক করা যায় -->
+            <div id="latestRegsBox" class="latest-regs hidden">
+                <h3>সর্বশেষ রেজিস্ট্রেশন</h3>
+                <div class="latest-regs-scroll">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Reg. No</th>
+                                <th>Applicant Name</th>
+                                <th>School Name</th>
+                                <th>Total Amount</th>
+                                <th>Payment Status</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody id="latestRegsBody"></tbody>
+                    </table>
+                </div>
+                <div id="latestRegsEmpty" class="latest-regs-empty hidden">এখনো কোনো রেজিস্ট্রেশন হয়নি।</div>
+            </div>
         </div>
 
         <!-- STEP 2 (PAYMENT PAGE) -->
@@ -483,7 +581,7 @@
                 <strong>পেমেন্ট নির্দেশনা:</strong><br>
                 <span id="dynamicPaymentNote">নিচের পার্সোনাল নম্বরে উল্লিখিত টাকা Send Money করে ট্রানজেকশন আইডি (TrxID) সংগ্রহ করুন:</span>
                 <div class="bkash-number-row">
-                    <strong>বিকাশ / মার্চেন্ট নম্বর: <span id="dynamicBkashNumber">01700000000</span></strong>
+                    <strong>বিকাশ নম্বর: <span id="dynamicBkashNumber">01700000000</span></strong>
                     <button type="button" class="btn-copy" id="copyNumberBtn" onclick="copyBkashNumber()">নম্বর কপি করুন</button>
                 </div>
             </div>
@@ -530,7 +628,7 @@
 
 <script type="module">
     import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getFirestore, doc, getDoc, collection, getDocs, query, where, serverTimestamp, writeBatch } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { getFirestore, doc, getDoc, collection, getDocs, query, where, orderBy, limit, onSnapshot, serverTimestamp, writeBatch } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     const FB_CONFIG_KEY = 'reunion_2027_firebase_config';
     const SETTINGS_KEY = 'reunion_2027_admin_settings';
@@ -546,7 +644,12 @@
         appId: "1:622863743452:web:b2618a59898ba4e224b719"
     };
 
+    // পাবলিক তালিকার collection: এখানে শুধু নিচের ৬টি তথ্য থাকে।
+    // registrations (মোবাইল, TrxID ইত্যাদি) এখন শুধু Admin/Verifier পড়তে পারে।
+    const PUBLIC_REG_COLLECTION = "public_registrations";
+
     const DEFAULT_SETTINGS = {
+        publicListCount: 7,
         bkashNumber: "01700000000",
         paymentNote: "নিচের পার্সোনাল নম্বরে উল্লিখিত টাকা Send Money করে ট্রানজেকশন আইডি (TrxID) সংগ্রহ করুন:",
         footerCredit: {
@@ -738,6 +841,83 @@
             : `* প্রতিজন সন্তানের ফি ${childFee} টাকা`;
 
         renderFooterCredit(activeConfig.footerCredit);
+        startLatestRegsList();
+    }
+
+    // ---------- সর্বশেষ রেজিস্ট্রেশন (পাবলিক তালিকা) ----------
+    let unsubscribeLatestRegs = null;
+    let latestRegsCount = null;
+
+    function formatShortDate(dateObj) {
+        const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        const yy = String(dateObj.getFullYear()).slice(-2);
+        return `${dateObj.getDate()} ${months[dateObj.getMonth()]} ${yy}`;
+    }
+
+    function getPublicListCount(cfg) {
+        const n = Math.floor(Number(cfg?.publicListCount));
+        if (isNaN(n) || n < 0) return DEFAULT_SETTINGS.publicListCount;
+        return Math.min(n, 500);
+    }
+
+    function renderLatestRegs(rows) {
+        const box = document.getElementById('latestRegsBox');
+        const tbody = document.getElementById('latestRegsBody');
+        const empty = document.getElementById('latestRegsEmpty');
+        tbody.innerHTML = '';
+        box.classList.remove('hidden');
+        empty.classList.toggle('hidden', rows.length > 0);
+
+        rows.forEach((r) => {
+            const tr = document.createElement('tr');
+            const verified = r.paymentStatus === 'Verified';
+            const created = r.createdAt && typeof r.createdAt.toDate === 'function' ? r.createdAt.toDate() : null;
+            const cells = [
+                [String(r.registrationNumber ?? '-'), ''],
+                [r.applicantName || '-', 'wrap'],
+                [r.school || '-', 'wrap'],
+                [`${Number(r.totalAmount || 0)} টাকা`, ''],
+                [null, ''],
+                [created ? formatShortDate(created) : '-', '']
+            ];
+            cells.forEach(([text, cls], i) => {
+                const td = document.createElement('td');
+                if (cls) td.className = cls;
+                if (i === 4) {
+                    const badge = document.createElement('span');
+                    badge.className = 'pay-status ' + (verified ? 'ok' : 'pending');
+                    badge.textContent = verified ? '✓ Verified' : 'Pending';
+                    td.appendChild(badge);
+                } else {
+                    td.textContent = text;
+                }
+                tr.appendChild(td);
+            });
+            tbody.appendChild(tr);
+        });
+    }
+
+    function startLatestRegsList() {
+        if (!dbInstance) return;
+        const count = getPublicListCount(activeConfig);
+        if (count === latestRegsCount && unsubscribeLatestRegs) return;
+        if (typeof unsubscribeLatestRegs === 'function') unsubscribeLatestRegs();
+        unsubscribeLatestRegs = null;
+        latestRegsCount = count;
+
+        if (count === 0) {
+            document.getElementById('latestRegsBox').classList.add('hidden');
+            return;
+        }
+
+        const q = query(collection(dbInstance, PUBLIC_REG_COLLECTION), orderBy('createdAt', 'desc'), limit(count));
+        unsubscribeLatestRegs = onSnapshot(q,
+            (snap) => renderLatestRegs(snap.docs.map(d => d.data())),
+            (err) => {
+                console.warn("Latest registrations list unavailable:", err);
+                document.getElementById('latestRegsBox').classList.add('hidden');
+            }
+        );
     }
 
     async function initFirestoreAndSyncSettings() {
@@ -759,6 +939,7 @@
         } catch (err) {
             console.warn("Firestore settings sync skipped/fallback to local:", err);
         }
+        startLatestRegsList();
     }
 
     function loadAdminConfig() {
@@ -1073,7 +1254,8 @@
 
         if (dbInstance) {
             try {
-                const snap = await getDocs(collection(dbInstance, "registrations"));
+                // পাবলিক collection থেকে সবচেয়ে বড় registration number
+                const snap = await getDocs(query(collection(dbInstance, PUBLIC_REG_COLLECTION), orderBy('registrationNumber', 'desc'), limit(1)));
                 snap.forEach(d => {
                     const num = Number(d.data()?.registrationNumber);
                     if (!isNaN(num) && num >= regNumber) {
@@ -1108,6 +1290,7 @@
             // Firestore Rules দুটো একসাথে না হলে কোনোটাই হতে দেয় না।
             const regRef = doc(collection(dbInstance, "registrations"));
             const payRef = doc(dbInstance, "payments", trxId);
+            const pubRef = doc(dbInstance, PUBLIC_REG_COLLECTION, regRef.id);
             const batch = writeBatch(dbInstance);
             batch.set(regRef, {
                 ...registrationData,
@@ -1115,6 +1298,15 @@
                 verificationStatus: "VERIFIED",
                 smsAmount: verifiedPayment.amount,
                 verifiedAt: serverTimestamp(),
+                createdAt: serverTimestamp()
+            });
+            // হোমপেজের "সর্বশেষ রেজিস্ট্রেশন" তালিকার জন্য শুধু ৬টি তথ্য
+            batch.set(pubRef, {
+                registrationNumber: registrationData.registrationNumber,
+                applicantName: registrationData.applicantName,
+                school: registrationData.school,
+                totalAmount: registrationData.totalAmount,
+                paymentStatus: "Verified",
                 createdAt: serverTimestamp()
             });
             batch.update(payRef, {
