@@ -367,6 +367,32 @@
             font-size: 12px;
             margin-left: 6px;
         }
+
+        .verify-badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 999px;
+            font-size: 11.5px;
+            font-weight: 700;
+        }
+
+        .verify-badge.verified {
+            background: #dcfce7;
+            color: #166534;
+            border: 1px solid #86efac;
+        }
+
+        .verify-badge.mismatch {
+            background: #fef3c7;
+            color: #92400e;
+            border: 1px solid #fcd34d;
+        }
+
+        .verify-badge.pending {
+            background: #f1f5f9;
+            color: #475569;
+            border: 1px solid #cbd5e1;
+        }
     </style>
 </head>
 <body>
@@ -564,12 +590,13 @@
                         <th>Total Amount</th>
                         <th>Sender Number</th>
                         <th>TrxID</th>
+                        <th>Payment Status</th>
                         <th>Date</th>
                         <th>Time</th>
                     </tr>
                 </thead>
                 <tbody id="registrationsTableBody">
-                    <tr><td colspan="13" style="text-align: center; color: #64748b;">এখনো কোনো রেজিস্ট্রেশন জমা হয়নি।</td></tr>
+                    <tr><td colspan="14" style="text-align: center; color: #64748b;">এখনো কোনো রেজিস্ট্রেশন জমা হয়নি।</td></tr>
                 </tbody>
             </table>
         </div>
@@ -717,6 +744,34 @@
         }
         const details = reg.children.map(c => `${c.name} (${c.age} বছর)`).join(', ');
         return `${count} জন — ${details}`;
+    }
+
+    function getPaymentVerificationBadge(reg) {
+        const status = String(reg.verificationStatus || '').toUpperCase();
+        const isVerified = Boolean(reg.paymentVerified);
+
+        if (status === 'VERIFIED_MATCH' || (isVerified && status !== 'AMOUNT_MISMATCH')) {
+            return {
+                text: "✓ Verified",
+                cssClass: "verify-badge verified",
+                csvText: "VERIFIED_MATCH"
+            };
+        }
+
+        if (status === 'AMOUNT_MISMATCH') {
+            const smsAmt = reg.smsAmount !== undefined && reg.smsAmount !== null ? ` (${reg.smsAmount} Tk)` : '';
+            return {
+                text: `⚠ Amount Mismatch${smsAmt}`,
+                cssClass: "verify-badge mismatch",
+                csvText: `AMOUNT_MISMATCH${smsAmt}`
+            };
+        }
+
+        return {
+            text: "⏳ Pending",
+            cssClass: "verify-badge pending",
+            csvText: "PENDING"
+        };
     }
 
     function fillConfigInputs(cfg) {
@@ -1177,7 +1232,7 @@
         if (list.length === 0) {
             const tr = document.createElement('tr');
             const td = document.createElement('td');
-            td.colSpan = 13;
+            td.colSpan = 14;
             td.style.textAlign = 'center';
             td.style.color = '#64748b';
             td.textContent = isCloudConnected
@@ -1191,8 +1246,9 @@
         list.slice().reverse().forEach((reg, idx) => {
             const tr = document.createElement('tr');
             const fallbackRegNo = 9110001 + (list.length - 1 - idx);
+            const badgeInfo = getPaymentVerificationBadge(reg);
 
-            const cells = [
+            const preCells = [
                 String(reg.registrationNumber || fallbackRegNo),
                 reg.applicantName || '-',
                 reg.mobile || '-',
@@ -1203,12 +1259,28 @@
                 formatChildrenDetailsForTable(reg),
                 String(reg.totalAmount ?? 0),
                 reg.bkashSender || '-',
-                reg.trxId || '-',
+                reg.trxId || '-'
+            ];
+
+            preCells.forEach(text => {
+                const td = document.createElement('td');
+                td.textContent = text;
+                tr.appendChild(td);
+            });
+
+            const statusTd = document.createElement('td');
+            const badgeSpan = document.createElement('span');
+            badgeSpan.className = badgeInfo.cssClass;
+            badgeSpan.textContent = badgeInfo.text;
+            statusTd.appendChild(badgeSpan);
+            tr.appendChild(statusTd);
+
+            const postCells = [
                 reg.date || '-',
                 reg.time || '-'
             ];
 
-            cells.forEach(text => {
+            postCells.forEach(text => {
                 const td = document.createElement('td');
                 td.textContent = text;
                 tr.appendChild(td);
@@ -1236,6 +1308,7 @@
             "Total Amount",
             "Sender Number",
             "TrxID",
+            "Payment Status",
             "Date",
             "Time"
         ];
@@ -1255,6 +1328,7 @@
                 reg.totalAmount ?? 0,
                 reg.bkashSender || '',
                 reg.trxId || '',
+                getPaymentVerificationBadge(reg).csvText,
                 reg.date || '',
                 reg.time || ''
             ].map(escapeCSV).join(',');
