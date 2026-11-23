@@ -212,6 +212,31 @@
             flex-shrink: 0;
         }
 
+        .tab-bar {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .tab-btn {
+            background: transparent;
+            border: none;
+            border-bottom: 3px solid transparent;
+            margin-bottom: -2px;
+            padding: 10px 14px;
+            font-size: 15px;
+            font-weight: 600;
+            color: #64748b;
+            cursor: pointer;
+        }
+
+        .tab-btn.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
         .uid-box {
             font-family: monospace;
             background: #f1f5f9;
@@ -449,6 +474,16 @@
 
     <div id="statusToast" class="status-toast"></div>
 
+    <!-- মেনু -->
+    <div class="tab-bar">
+        <button type="button" class="tab-btn" data-tab="tabDatabase" onclick="showAdminTab('tabDatabase')">১. ডাটাবেস ও অ্যাক্সেস</button>
+        <button type="button" class="tab-btn" data-tab="tabSettings" onclick="showAdminTab('tabSettings')">২. ফর্ম ও পেমেন্ট সেটিংস</button>
+        <button type="button" class="tab-btn" data-tab="tabHistory" onclick="showAdminTab('tabHistory')">৩. রেজিস্ট্রেশন হিস্ট্রি</button>
+    </div>
+
+    <!-- মেনু ১: Firebase কনফিগ + Admin/Verifier UID -->
+    <div id="tabDatabase" class="admin-tab">
+
     <!-- Firebase Config কার্ড -->
     <div class="card" style="margin-bottom: 20px;">
         <h2>Firebase Database Config (Firestore & Auth)</h2>
@@ -520,6 +555,10 @@
         </div>
     </div>
 
+    </div>
+
+    <!-- মেনু ২: পেমেন্ট, ফুটার, ফি, স্কুল, রক্তের গ্রুপ, টি-শার্ট -->
+    <div id="tabSettings" class="admin-tab hidden">
     <!-- পেমেন্ট সেটিংস কার্ড -->
     <div class="card" style="margin-bottom: 20px;">
         <h2>পেমেন্ট সেটিংস</h2>
@@ -619,6 +658,10 @@
         <button type="button" class="btn-save" onclick="saveAllSettings()">✓ Save Changes (সব তথ্য সেভ করুন)</button>
     </div>
 
+    </div>
+
+    <!-- মেনু ৩: জমা হওয়া রেজিস্ট্রেশন (হিস্ট্রি) -->
+    <div id="tabHistory" class="admin-tab hidden">
     <!-- জমা হওয়া রেজিস্ট্রেশন তালিকা -->
     <div class="card">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
@@ -652,6 +695,7 @@
                 </tbody>
             </table>
         </div>
+    </div>
     </div>
 </div>
 
@@ -1029,6 +1073,20 @@
 
         await loadRoles();
     }
+
+    // ---------- মেনু (ট্যাব) ----------
+    const ADMIN_TAB_KEY = 'reunion_2027_admin_tab';
+    window.showAdminTab = function (tabId) {
+        if (!document.getElementById(tabId)) tabId = 'tabDatabase';
+        document.querySelectorAll('.admin-tab').forEach(el => el.classList.toggle('hidden', el.id !== tabId));
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.tab === tabId));
+        try { localStorage.setItem(ADMIN_TAB_KEY, tabId); } catch {}
+    };
+    (function () {
+        let saved = 'tabDatabase';
+        try { saved = localStorage.getItem(ADMIN_TAB_KEY) || 'tabDatabase'; } catch {}
+        window.showAdminTab(saved);
+    })();
 
     // ---------- Admin / Verifier UID (reunion_2027_roles/roles) ----------
     let rolesData = null;   // { adminUids: [], verifierUids: [] } অথবা null (এখনো তৈরি হয়নি)

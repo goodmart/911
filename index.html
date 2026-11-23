@@ -323,6 +323,25 @@
             font-weight: 600;
         }
 
+        .verify-ok {
+            background: #dcfce7;
+            color: #166534;
+            border: 1px solid #86efac;
+            padding: 10px 12px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            margin-top: 8px;
+        }
+
+        .btn-verify {
+            background: #e2136e;
+        }
+
+        .btn-verify:hover {
+            background: #c00f5f;
+        }
+
         .success-box {
             text-align: center;
             padding: 16px 8px;
@@ -479,11 +498,15 @@
                 <input type="text" id="trxId" placeholder="যেমন: 9H7G6F5D4S" style="text-transform: uppercase;" required>
             </div>
 
+            <button type="button" id="verifyBtn" class="btn-primary btn-verify" onclick="verifyPaymentClick()">✓ পেমেন্ট ভেরিফাই করুন</button>
+            <div id="verifyOkBox" class="verify-ok hidden"></div>
+
             <p class="error-msg" id="step2Error"></p>
 
             <div class="btn-group">
                 <button type="button" class="btn-secondary" onclick="goToStep1()">← পূর্ববর্তী ধাপ</button>
-                <button type="submit" id="submitBtn" class="btn-primary" style="margin-top: 0;">রেজিস্ট্রেশন সম্পন্ন করুন</button>
+                <!-- পেমেন্ট ভেরিফাই হলেই এই বাটন দেখা যাবে -->
+                <button type="submit" id="submitBtn" class="btn-primary hidden" style="margin-top: 0;">রেজিস্ট্রেশন সম্পন্ন করুন</button>
             </div>
 
             <!-- Highlighted Footer on Payment Page (Step 2) -->
@@ -507,7 +530,7 @@
 
 <script type="module">
     import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getFirestore, doc, getDoc, collection, addDoc, getDocs, query, where, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { getFirestore, doc, getDoc, collection, getDocs, query, where, serverTimestamp, writeBatch } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     const FB_CONFIG_KEY = 'reunion_2027_firebase_config';
     const SETTINGS_KEY = 'reunion_2027_admin_settings';
@@ -555,6 +578,10 @@
     let activeConfig = JSON.parse(JSON.stringify(DEFAULT_SETTINGS));
     let calculatedTotalAmount = 0;
     let dbInstance = null;
+
+    // Android অ্যাপ bKash SMS থেকে payments/{TrxID} এ পেমেন্ট সেভ করে।
+    // Verify সফল হলে এখানে রাখা হয়, তারপরই রেজিস্ট্রেশন জমা দেওয়া যায়।
+    let verifiedPayment = null; // { trxId, sender, amount }
 
     function getActiveFirebaseConfig() {
         try {
@@ -883,6 +910,7 @@
 
         calculatedTotalAmount = total;
         document.getElementById('totalAmountText').textContent = `${total} টাকা`;
+        resetPaymentVerification();
 
         document.getElementById('step1').classList.add('hidden');
         document.getElementById('step2').classList.remove('hidden');
@@ -891,34 +919,90 @@
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
+    function resetPaymentVerification() {
+        verifiedPayment = null;
+        document.getElementById('submitBtn').classList.add('hidden');
+        document.getElementById('verifyBtn').classList.remove('hidden');
+        document.getElementById('verifyBtn').disabled = false;
+        document.getElementById('verifyBtn').textContent = "✓ পেমেন্ট ভেরিফাই করুন";
+        document.getElementById('verifyOkBox').classList.add('hidden');
+        document.getElementById('senderNumber').readOnly = false;
+        document.getElementById('trxId').readOnly = false;
+    }
+
+    function normalizeBdNumber(n) {
+        const digits = String(n || '').replace(/\D/g, '');
+        return digits.startsWith('88') ? digits.slice(2) : digits;
+    }
+
+    function showStep2Error(msg) {
+        const errorMsg = document.getElementById('step2Error');
+        errorMsg.textContent = msg;
+        errorMsg.style.display = 'block';
+    }
+
+    window.verifyPaymentClick = async function () {
+        const sender = document.getElementById('senderNumber').value.trim();
+        const trxId = document.getElementById('trxId').value.trim().toUpperCase();
+        const verifyBtn = document.getElementById('verifyBtn');
+        document.getElementById('step2Error').style.display = 'none';
+
+        if (!BD_MOBILE_REGEX.test(sender)) {
+            return showStep2Error("যে নম্বর থেকে টাকা পাঠিয়েছেন সেটি সঠিক ১১ ডিজিটের বাংলাদেশি নম্বর হতে হবে।");
+        }
+        if (!/^[A-Z0-9]{6,20}$/.test(trxId)) {
+            return showStep2Error("অনুগ্রহ করে সঠিক ট্রানজেকশন আইডি (TrxID - শুধু ইংরেজি অক্ষর ও সংখ্যা) দিন।");
+        }
+        if (!dbInstance) {
+            return showStep2Error("সার্ভারের সাথে সংযোগ নেই। ইন্টারনেট চেক করে পেজটি রিফ্রেশ করুন।");
+        }
+
+        verifyBtn.disabled = true;
+        verifyBtn.textContent = "ভেরিফাই করা হচ্ছে...";
+
+        try {
+            const snap = await getDoc(doc(dbInstance, "payments", trxId));
+            if (!snap.exists()) {
+                return showStep2Error("এই TrxID এর পেমেন্ট এখনো পাওয়া যায়নি। টাকা পাঠানোর ১-২ মিনিট পর আবার ভেরিফাই চাপুন, আর TrxID ঠিকমতো লিখেছেন কিনা দেখুন।");
+            }
+            const pay = snap.data();
+            if (pay.used === true) {
+                return showStep2Error("এই ট্রানজেকশন আইডি (TrxID) দিয়ে আগেই একটি রেজিস্ট্রেশন হয়ে গেছে।");
+            }
+            const paidAmount = Number(pay.amount);
+            if (Math.abs(paidAmount - Number(calculatedTotalAmount)) >= 0.01) {
+                return showStep2Error(`টাকার পরিমাণ মেলেনি। আপনি পাঠিয়েছেন ${paidAmount} টাকা, কিন্তু প্রদেয় ${calculatedTotalAmount} টাকা। সাহায্যের জন্য আয়োজকদের সাথে যোগাযোগ করুন।`);
+            }
+            if (pay.payerNumber && normalizeBdNumber(pay.payerNumber) !== sender) {
+                return showStep2Error("যে নম্বর থেকে টাকা পাঠিয়েছেন সেটি এই TrxID এর সাথে মেলেনি। সঠিক নম্বর দিন।");
+            }
+
+            verifiedPayment = { trxId, sender, amount: paidAmount };
+            document.getElementById('senderNumber').readOnly = true;
+            document.getElementById('trxId').readOnly = true;
+            verifyBtn.classList.add('hidden');
+            const okBox = document.getElementById('verifyOkBox');
+            okBox.textContent = `✓ পেমেন্ট ভেরিফাই হয়েছে (${paidAmount} টাকা, TrxID: ${trxId})। এখন "রেজিস্ট্রেশন সম্পন্ন করুন" চাপুন।`;
+            okBox.classList.remove('hidden');
+            document.getElementById('submitBtn').classList.remove('hidden');
+        } catch (e) {
+            console.error("Payment verify error:", e);
+            showStep2Error("ভেরিফাই করতে সমস্যা হয়েছে। কিছুক্ষণ পর আবার চেষ্টা করুন।");
+        } finally {
+            if (!verifiedPayment) {
+                verifyBtn.disabled = false;
+                verifyBtn.textContent = "✓ পেমেন্ট ভেরিফাই করুন";
+            }
+        }
+    };
+
     window.goToStep1 = function () {
+        resetPaymentVerification();
         document.getElementById('step2').classList.add('hidden');
         document.getElementById('step1').classList.remove('hidden');
         document.getElementById('badge2').classList.remove('active');
         document.getElementById('badge1').classList.add('active');
     };
-
-    async function verifyGatewayPayment(trxId, expectedAmount) {
-        const existing = getSafeRegistrations();
-        const isDuplicateLocal = existing.some(r => String(r.trxId).toUpperCase() === trxId.toUpperCase());
-        if (isDuplicateLocal) {
-            return { verified: false, reason: "এই ট্রানজেকশন আইডি (TrxID) ইতিমধ্যেই ব্যবহৃত হয়েছে!" };
-        }
-
-        if (dbInstance) {
-            try {
-                const q = query(collection(dbInstance, "registrations"), where("trxId", "==", trxId.toUpperCase()));
-                const snap = await getDocs(q);
-                if (!snap.empty) {
-                    return { verified: false, reason: "এই ট্রানজেকশন আইডি (TrxID) ইতিমধ্যেই ক্লাউডে ব্যবহৃত হয়েছে!" };
-                }
-            } catch (e) {
-                console.warn("Duplicate check skipped:", e);
-            }
-        }
-
-        return { verified: true, gatewayTrxId: trxId };
-    }
 
     function renderReceiptCard(data) {
         const card = document.getElementById('receiptCard');
@@ -960,36 +1044,20 @@
     document.getElementById('reunionForm').addEventListener('submit', async function(e) {
         e.preventDefault();
         
-        const sender = document.getElementById('senderNumber').value.trim();
-        const trxId = document.getElementById('trxId').value.trim().toUpperCase();
         const errorMsg = document.getElementById('step2Error');
         const submitBtn = document.getElementById('submitBtn');
 
-        if (!BD_MOBILE_REGEX.test(sender)) {
-            errorMsg.textContent = "যে নম্বর থেকে টাকা পাঠিয়েছেন সেটি সঠিক ১১ ডিজিটের বাংলাদেশি নম্বর হতে হবে।";
-            errorMsg.style.display = 'block';
-            return;
+        // ভেরিফাই না হলে রেজিস্ট্রেশন হবে না
+        if (!verifiedPayment || !dbInstance) {
+            resetPaymentVerification();
+            return showStep2Error("আগে \"পেমেন্ট ভেরিফাই করুন\" বাটনে চাপ দিয়ে পেমেন্ট ভেরিফাই করুন।");
         }
-
-        if (!/^[A-Z0-9]{6,20}$/.test(trxId)) {
-            errorMsg.textContent = "অনুগ্রহ করে সঠিক ট্রানজেকশন আইডি (TrxID - শুধু ইংরেজি অক্ষর ও সংখ্যা) দিন।";
-            errorMsg.style.display = 'block';
-            return;
-        }
+        const sender = verifiedPayment.sender;
+        const trxId = verifiedPayment.trxId;
 
         errorMsg.style.display = 'none';
         submitBtn.disabled = true;
-        submitBtn.textContent = "যাচাই করা হচ্ছে...";
-
-        const paymentCheck = await verifyGatewayPayment(trxId, calculatedTotalAmount);
-
-        if (!paymentCheck.verified) {
-            submitBtn.disabled = false;
-            submitBtn.textContent = "রেজিস্ট্রেশন সম্পন্ন করুন";
-            errorMsg.textContent = paymentCheck.reason || "ট্রানজেকশন আইডিটি সঠিক নয় বা পেমেন্ট পাওয়া যায়নি।";
-            errorMsg.style.display = 'block';
-            return;
-        }
+        submitBtn.textContent = "রেজিস্ট্রেশন জমা হচ্ছে...";
 
         const children = [];
         document.querySelectorAll('.child-row').forEach(row => {
@@ -1035,24 +1103,39 @@
             submittedAt: now.toLocaleString('bn-BD')
         };
 
+        try {
+            // একসাথে (batch): রেজিস্ট্রেশন তৈরি + পেমেন্টটি "ব্যবহৃত" চিহ্নিত।
+            // Firestore Rules দুটো একসাথে না হলে কোনোটাই হতে দেয় না।
+            const regRef = doc(collection(dbInstance, "registrations"));
+            const payRef = doc(dbInstance, "payments", trxId);
+            const batch = writeBatch(dbInstance);
+            batch.set(regRef, {
+                ...registrationData,
+                paymentVerified: true,
+                verificationStatus: "VERIFIED",
+                smsAmount: verifiedPayment.amount,
+                verifiedAt: serverTimestamp(),
+                createdAt: serverTimestamp()
+            });
+            batch.update(payRef, {
+                used: true,
+                usedBy: regRef.id,
+                usedAt: serverTimestamp()
+            });
+            await batch.commit();
+        } catch (err) {
+            console.error("Failed to save registration to Firestore:", err);
+            submitBtn.disabled = false;
+            submitBtn.textContent = "রেজিস্ট্রেশন সম্পন্ন করুন";
+            const msg = err?.code === 'permission-denied'
+                ? "রেজিস্ট্রেশন জমা হয়নি। এই TrxID হয়তো এইমাত্র অন্য কেউ ব্যবহার করেছে, অথবা টাকার পরিমাণ মেলেনি। আয়োজকদের সাথে যোগাযোগ করুন।"
+                : "রেজিস্ট্রেশন জমা দিতে সমস্যা হয়েছে। ইন্টারনেট চেক করে আবার চেষ্টা করুন।";
+            showStep2Error(msg);
+            return;
+        }
+
         existingList.push(registrationData);
         localStorage.setItem(REGISTRATIONS_KEY, JSON.stringify(existingList));
-
-        if (dbInstance) {
-            try {
-                await addDoc(collection(dbInstance, "registrations"), {
-                    ...registrationData,
-                    createdAt: serverTimestamp()
-                });
-            } catch (err) {
-                console.error("Failed to save registration to Firestore:", err);
-                submitBtn.disabled = false;
-                submitBtn.textContent = "রেজিস্ট্রেশন সম্পন্ন করুন";
-                errorMsg.textContent = "লোকালি সেভ হয়েছে, কিন্তু Firestore-এ পাঠাতে সমস্যা হয়েছে। Firestore Rules চেক করুন।";
-                errorMsg.style.display = 'block';
-                return;
-            }
-        }
 
         renderReceiptCard(registrationData);
 
