@@ -324,12 +324,40 @@
             overflow: hidden;
         }
 
-        .latest-regs h3 {
-            font-size: 15px;
+        .latest-regs-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 6px 12px;
             padding: 10px 12px;
             background: #ecfdf5;
-            color: var(--primary);
             border-bottom: 1px solid #e2e8f0;
+        }
+
+        .latest-regs h3 {
+            font-size: 15px;
+            color: var(--primary);
+        }
+
+        .latest-regs-stats {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            font-size: 12.5px;
+        }
+
+        .latest-regs-stats span {
+            background: #ffffff;
+            border: 1px solid #a7f3d0;
+            color: #065f46;
+            border-radius: 6px;
+            padding: 3px 8px;
+            white-space: nowrap;
+        }
+
+        .latest-regs-stats b {
+            font-weight: 800;
         }
 
         .latest-regs-scroll {
@@ -546,7 +574,13 @@
             <!-- সর্বশেষ রেজিস্ট্রেশন: শুধু Reg. No, নাম, স্কুল, টাকা, পেমেন্ট স্ট্যাটাস, তারিখ -->
             <!-- কতজন দেখাবে তা admin.html > ফর্ম ও পেমেন্ট সেটিংস থেকে ঠিক করা যায় -->
             <div id="latestRegsBox" class="latest-regs hidden">
-                <h3>সর্বশেষ রেজিস্ট্রেশন</h3>
+                <div class="latest-regs-head">
+                    <h3>সর্বশেষ রেজিস্ট্রেশন</h3>
+                    <div id="latestRegsStats" class="latest-regs-stats hidden">
+                        <span>Total Payment Received = <b id="statTotalPaid">0</b> Taka</span>
+                        <span>Total Registration = <b id="statTotalRegs">0</b> জন</span>
+                    </div>
+                </div>
                 <div class="latest-regs-scroll">
                     <table>
                         <thead>
@@ -628,7 +662,7 @@
 
 <script type="module">
     import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getFirestore, doc, getDoc, collection, getDocs, query, where, orderBy, limit, onSnapshot, serverTimestamp, writeBatch } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { getFirestore, doc, getDoc, collection, getDocs, query, where, orderBy, limit, onSnapshot, serverTimestamp, writeBatch, getAggregateFromServer, count, sum } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     const FB_CONFIG_KEY = 'reunion_2027_firebase_config';
     const SETTINGS_KEY = 'reunion_2027_admin_settings';
@@ -897,6 +931,38 @@
         });
     }
 
+    // মোট টাকা (শুধু Verified) ও মোট রেজিস্ট্রেশন: Firestore aggregation দিয়ে,
+    // তাই যত রেজিস্ট্রেশনই হোক পুরো তালিকা ডাউনলোড হয় না
+    let statsTimer = null;
+    async function refreshRegStats() {
+        if (!dbInstance) return;
+        const statsBox = document.getElementById('latestRegsStats');
+        try {
+            const col = collection(dbInstance, PUBLIC_REG_COLLECTION);
+            const verifiedQ = query(col, where('paymentStatus', '==', 'Verified'));
+            const all = await getAggregateFromServer(col, { total: count() });
+            let paid = 0;
+            try {
+                paid = Number((await getAggregateFromServer(verifiedQ, { paid: sum('totalAmount') })).data().paid || 0);
+            } catch (aggErr) {
+                // Firestore index না থাকলে: Verified গুলো পড়ে এখানেই যোগ করা (এখানে শুধু পাবলিক তথ্য থাকে)
+                console.warn("sum aggregation fallback:", aggErr?.code || aggErr);
+                const snap = await getDocs(verifiedQ);
+                snap.forEach(d => { paid += Number(d.data().totalAmount) || 0; });
+            }
+            document.getElementById('statTotalRegs').textContent = Number(all.data().total || 0).toLocaleString('en-US');
+            document.getElementById('statTotalPaid').textContent = paid.toLocaleString('en-US');
+            statsBox.classList.remove('hidden');
+        } catch (err) {
+            console.warn("Registration stats unavailable:", err);
+            statsBox.classList.add('hidden');
+        }
+    }
+    function scheduleRegStats() {
+        clearTimeout(statsTimer);
+        statsTimer = setTimeout(refreshRegStats, 400);
+    }
+
     function startLatestRegsList() {
         if (!dbInstance) return;
         const count = getPublicListCount(activeConfig);
@@ -912,7 +978,10 @@
 
         const q = query(collection(dbInstance, PUBLIC_REG_COLLECTION), orderBy('createdAt', 'desc'), limit(count));
         unsubscribeLatestRegs = onSnapshot(q,
-            (snap) => renderLatestRegs(snap.docs.map(d => d.data())),
+            (snap) => {
+                renderLatestRegs(snap.docs.map(d => d.data()));
+                scheduleRegStats();
+            },
             (err) => {
                 console.warn("Latest registrations list unavailable:", err);
                 document.getElementById('latestRegsBox').classList.add('hidden');
